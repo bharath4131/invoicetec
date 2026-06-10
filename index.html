@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Professional Invoice Generator — Create, manage, and download beautiful invoices as PDF. Free, fast, and fully private.">
+    <meta name="keywords" content="invoice generator, PDF invoice, billing, business tools">
+    <title>InvoiceFlow — Professional Invoice Generator</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/pages.css">
+    <link rel="stylesheet" href="css/animations.css">
+
+    <!-- Favicon (inline SVG) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXX" crossorigin="anonymous"></script>
+</head>
+<body>
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- AUTH PAGE                                    -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="auth-page" class="page">
+        <div class="auth-container animate-scaleIn">
+            <div class="auth-card">
+                <div class="auth-logo">
+                    <div class="auth-logo-icon">📄</div>
+                    <h1>InvoiceFlow</h1>
+                    <p>Professional invoicing made simple</p>
+                </div>
+
+                <div class="auth-tabs">
+                    <button class="auth-tab active" data-tab="login" id="login-tab-btn">Sign In</button>
+                    <button class="auth-tab" data-tab="register" id="register-tab-btn">Sign Up</button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="login-form" class="auth-form">
+                    <div class="form-group">
+                        <label class="form-label" for="login-email">Email Address</label>
+                        <input type="email" id="login-email" class="form-input" placeholder="you@example.com" required autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="login-password">Password</label>
+                        <input type="password" id="login-password" class="form-input" placeholder="Enter your password" required minlength="6" autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn btn-primary auth-submit" id="login-submit">
+                        <span>Sign In</span>
+                        <span>→</span>
+                    </button>
+                </form>
+
+                <!-- Register Form -->
+                <form id="register-form" class="auth-form" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label" for="register-name">Full Name</label>
+                        <input type="text" id="register-name" class="form-input" placeholder="John Doe" required autocomplete="name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="register-email">Email Address</label>
+                        <input type="email" id="register-email" class="form-input" placeholder="you@example.com" required autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="register-password">Password</label>
+                        <input type="password" id="register-password" class="form-input" placeholder="Min 6 characters" required minlength="6" autocomplete="new-password">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="register-confirm">Confirm Password</label>
+                        <input type="password" id="register-confirm" class="form-input" placeholder="Repeat your password" required minlength="6" autocomplete="new-password">
+                    </div>
+                    <button type="submit" class="btn btn-primary auth-submit" id="register-submit">
+                        <span>Create Account</span>
+                        <span>→</span>
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <p class="auth-footer-text">Your data stays private — stored only in your browser.</p>
+                    <p class="auth-footer-text" style="margin-top: 8px;">
+                        <a href="#" id="auth-privacy-link" style="color: var(--accent-primary); text-decoration: none; font-weight: 500;">Privacy Policy</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- APP SHELL (Sidebar + Main)                   -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="app-shell" class="app" style="display: none;">
+
+        <!-- Sidebar Overlay (Mobile) -->
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <span class="sidebar-brand-icon">📄</span>
+                <span class="sidebar-brand-text">InvoiceFlow</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section-label">MAIN</div>
+                <a class="nav-item active" data-route="#/dashboard" id="nav-dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a class="nav-item" data-route="#/invoices" id="nav-invoices">
+                    <span class="nav-icon">📄</span>
+                    <span>Invoices</span>
+                </a>
+                <a class="nav-item" data-route="#/create" id="nav-create">
+                    <span class="nav-icon">✏️</span>
+                    <span>New Invoice</span>
+                </a>
+                <a class="nav-item" data-route="#/customers" id="nav-customers">
+                    <span class="nav-icon">👥</span>
+                    <span>Customers</span>
+                </a>
+
+                <div class="nav-section-label" style="margin-top: 24px;">SETTINGS</div>
+                <a class="nav-item" data-route="#/settings" id="nav-settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-user" id="sidebar-user" style="margin-bottom: 12px;">
+                    <div class="avatar" id="user-avatar">U</div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name" id="sidebar-user-name">User</div>
+                        <div class="sidebar-user-email" id="sidebar-user-email">user@email.com</div>
+                    </div>
+                </div>
+                <div style="text-align: center; border-top: 1px solid var(--border-color); padding-top: 8px;">
+                    <a href="#" id="sidebar-privacy-link" style="color: var(--text-tertiary); text-decoration: none; font-size: 0.75rem; font-weight: 500; transition: color var(--transition-fast);">Privacy Policy</a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="btn btn-icon hamburger" id="hamburger-btn" aria-label="Toggle menu">☰</button>
+                    <h2 class="header-title" id="header-title">Dashboard</h2>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-icon theme-toggle" id="theme-toggle" title="Toggle dark mode" aria-label="Toggle theme">🌙</button>
+                    <div class="dropdown" id="user-dropdown">
+                        <button class="btn btn-ghost user-menu-btn" id="user-menu-btn">
+                            <div class="avatar avatar-sm" id="header-avatar">U</div>
+                            <span id="header-user-name">User</span>
+                            <span class="dropdown-arrow">▾</span>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" data-route="#/settings" id="menu-settings">
+                                <span>⚙️</span>
+                                <span>Settings</span>
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item dropdown-item-danger" id="logout-btn">
+                                <span>🚪</span>
+                                <span>Sign Out</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <div class="content">
+
+                <!-- ═══════════ DASHBOARD PAGE ═══════════ -->
+                <div id="dashboard-page" class="page" style="display: none;">
+                    <div class="page-header">
+                        <div class="page-header-left">
+                            <h1>Dashboard</h1>
+                            <p>Overview of your invoicing activity</p>
+                        </div>
+                        <div class="page-header-right">
+                            <select id="dashboard-currency-select" class="form-input" style="width: auto; padding: 6px 12px; height: 38px; font-weight: 500;">
+                                <option value="USD">Show in USD ($)</option>
+                                <option value="EUR">Show in EUR (€)</option>
+                                <option value="GBP">Show in GBP (£)</option>
+                                <option value="INR">Show in INR (₹)</option>
+                                <option value="CAD">Show in CAD (CA$)</option>
+                                <option value="AUD">Show in AUD (A$)</option>
+                                <option value="JPY">Show in JPY (¥)</option>
+                                <option value="SGD">Show in SGD (S$)</option>
+                            </select>
+                            <button class="btn btn-primary" id="dashboard-new-invoice">
+                                <span>+</span>
+                                <span>New Invoice</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="content-area" id="dashboard-content">
+                        <!-- Dashboard content rendered by dashboard.js -->
+                    </div>
+                    <!-- AdSense Unit (Tasteful horizontal banner) -->
+                    <div class="adsense-container">
+                        <ins class="adsbygoogle"
+                             style="display:block"
+                             data-ad-client="ca-pub-XXXXXXXXXX"
+                             data-ad-slot="1234567890"
+                             data-ad-format="auto"
+                             data-full-width-responsive="true"></ins>
+                        <script>
+                             (adsbygoogle = window.adsbygoogle || []).push({});
+                        </script>
+                    </div>
+                </div>
+
+                <!-- ═══════════ INVOICES LIST PAGE ═══════════ -->
+                <div id="invoices-page" class="page" style="display: none;">
+                    <div class="page-header">
+                        <div class="page-header-left">
+                            <h1>Invoices</h1>
+                            <p>Manage all your invoices</p>
+                        </div>
+                        <div class="page-header-right">
+                            <button class="btn btn-primary" id="invoices-new-btn">
+                                <span>+</span>
+                                <span>New Invoice</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="invoices-toolbar">
+                        <div class="search-bar">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" class="form-input" id="invoice-search" placeholder="Search invoices...">
+                        </div>
+                        <div class="invoices-filters" id="invoice-filters">
+                            <button class="filter-btn active" data-status="all" id="filter-all">All</button>
+                            <button class="filter-btn" data-status="draft" id="filter-draft">Draft</button>
+                            <button class="filter-btn" data-status="pending" id="filter-pending">Pending</button>
+                            <button class="filter-btn" data-status="paid" id="filter-paid">Paid</button>
+                            <button class="filter-btn" data-status="overdue" id="filter-overdue">Overdue</button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table" id="invoices-table">
+                            <thead>
+                                <tr>
+                                    <th>Invoice #</th>
+                                    <th>Customer</th>
+                                    <th>Date</th>
+                                    <th>Due Date</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoices-table-body">
+                                <!-- Populated by app.js -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="empty-state" id="invoices-empty" style="display: none;">
+                        <div class="empty-state-icon">📄</div>
+                        <h3 class="empty-state-title">No invoices yet</h3>
+                        <p class="empty-state-text">Create your first invoice to get started</p>
+                        <button class="btn btn-primary" id="invoices-empty-create">
+                            <span>+</span>
+                            <span>Create Invoice</span>
+                        </button>
+                    </div>
+                    <!-- AdSense Unit (Tasteful horizontal banner) -->
+                    <div class="adsense-container">
+                        <ins class="adsbygoogle"
+                             style="display:block"
+                             data-ad-client="ca-pub-XXXXXXXXXX"
+                             data-ad-slot="0987654321"
+                             data-ad-format="auto"
+                             data-full-width-responsive="true"></ins>
+                        <script>
+                             (adsbygoogle = window.adsbygoogle || []).push({});
+                        </script>
+                    </div>
+                </div>
+
+                <!-- ═══════════ CREATE / EDIT INVOICE PAGE ═══════════ -->
+                <div id="create-invoice-page" class="page" style="display: none;">
+                    <div class="page-header">
+                        <div class="page-header-left">
+                            <h1 id="invoice-form-title">New Invoice</h1>
+                            <p id="invoice-form-subtitle">Fill in the details below</p>
+                        </div>
+                        <div class="page-header-right">
+                            <button class="btn btn-secondary" id="invoice-cancel-btn">Cancel</button>
+                            <button class="btn btn-primary" id="invoice-save-draft-btn">
+                                <span>💾</span>
+                                <span>Save Draft</span>
+                            </button>
+                            <button class="btn btn-primary" id="invoice-save-btn" style="background: var(--accent-success);">
+                                <span>✓</span>
+                                <span>Save & Send</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <form id="invoice-form" autocomplete="off">
+                        <div class="invoice-form-grid">
+                            <!-- Left Column -->
+                            <div>
+                                <!-- Invoice Details -->
+                                <div class="invoice-section card">
+                                    <h3 class="invoice-section-title">
+                                        <span>📋</span> Invoice Details
+                                    </h3>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label" for="inv-number">Invoice Number</label>
+                                            <input type="text" id="inv-number" class="form-input mono" readonly>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" for="inv-currency">Currency</label>
+                                            <select id="inv-currency" class="form-input form-select">
+                                                <option value="USD">USD ($)</option>
+                                                <option value="EUR">EUR (€)</option>
+                                                <option value="GBP">GBP (£)</option>
+                                                <option value="INR">INR (₹)</option>
+                                                <option value="CAD">CAD (C$)</option>
+                                                <option value="AUD">AUD (A$)</option>
+                                                <option value="JPY">JPY (¥)</option>
+                                                <option value="SGD">SGD (S$)</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" for="inv-status">Status</label>
+                                            <select id="inv-status" class="form-input form-select">
+                                                <option value="draft">Draft</option>
+                                                <option value="pending">Pending</option>
+                                                <option value="paid">Paid</option>
+                                                <option value="overdue">Overdue</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label" for="inv-date">Invoice Date</label>
+                                            <input type="date" id="inv-date" class="form-input">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" for="inv-due-date">Due Date</label>
+                                            <input type="date" id="inv-due-date" class="form-input">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Customer Selection -->
+                                <div class="invoice-section card">
+                                    <h3 class="invoice-section-title">
+                                        <span>👤</span> Customer
+                                    </h3>
+                                    <div class="form-group">
+                                        <label class="form-label" for="inv-customer">Select Customer</label>
+                                        <select id="inv-customer" class="form-input form-select">
+                                            <option value="">— Choose a customer —</option>
+                                        </select>
+                                    </div>
+                                    <button type="button" class="btn btn-ghost btn-sm" id="inv-add-customer-btn">
+                                        <span>+</span> Add New Customer
+                                    </button>
+                                    <div id="inv-customer-preview" class="customer-preview" style="display:none;">
+                                        <div id="inv-customer-details"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Column -->
+                            <div>
+                                <!-- Notes -->
+                                <div class="invoice-section card">
+                                    <h3 class="invoice-section-title">
+                                        <span>📝</span> Notes & Terms
+                                    </h3>
+                                    <div class="form-group">
+                                        <label class="form-label" for="inv-notes">Notes (shown on invoice)</label>
+                                        <textarea id="inv-notes" class="form-input form-textarea" placeholder="Payment terms, thank you message, etc."></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Template -->
+                                <div class="invoice-section card">
+                                    <h3 class="invoice-section-title">
+                                        <span>🎨</span> Template
+                                    </h3>
+                                    <div class="template-selector" id="inv-template-selector">
+                                        <div class="template-option active" data-template="classic">
+                                            <div class="template-preview-icon">📃</div>
+                                            <div class="template-name">Classic</div>
+                                            <div class="template-desc">Clean & minimal</div>
+                                        </div>
+                                        <div class="template-option" data-template="modern">
+                                            <div class="template-preview-icon">💎</div>
+                                            <div class="template-name">Modern</div>
+                                            <div class="template-desc">Colorful accents</div>
+                                        </div>
+                                        <div class="template-option" data-template="bold">
+                                            <div class="template-preview-icon">⚡</div>
+                                            <div class="template-name">Bold</div>
+                                            <div class="template-desc">Dark & striking</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Line Items (Full Width) -->
+                        <div class="invoice-section card">
+                            <h3 class="invoice-section-title">
+                                <span>📦</span> Items / Services
+                            </h3>
+                            <div class="table-responsive">
+                                <table class="items-table" id="items-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 40%;">Description</th>
+                                            <th style="width: 12%;">Quantity</th>
+                                            <th style="width: 18%;" id="th-unit-price">Unit Price ($)</th>
+                                            <th style="width: 18%;" id="th-amount">Amount ($)</th>
+                                            <th style="width: 12%;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="items-table-body">
+                                        <!-- Items added dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button type="button" class="add-item-btn" id="add-item-btn">
+                                + Add Item
+                            </button>
+
+                            <!-- Totals -->
+                            <div class="invoice-totals" id="invoice-totals">
+                                <div class="totals-row">
+                                    <span>Subtotal</span>
+                                    <span class="mono" id="inv-subtotal">$0.00</span>
+                                </div>
+                                <div class="totals-row">
+                                    <span class="totals-tax-label">
+                                        Tax
+                                        <input type="number" id="inv-tax-rate" class="form-input totals-inline-input" value="0" min="0" max="100" step="0.1">
+                                        %
+                                    </span>
+                                    <span class="mono" id="inv-tax-amount">$0.00</span>
+                                </div>
+                                <div class="totals-row">
+                                    <span class="totals-discount-label">
+                                        Discount
+                                        <select id="inv-discount-type" class="form-input totals-inline-select">
+                                            <option value="percentage">%</option>
+                                            <option value="fixed">$</option>
+                                        </select>
+                                        <input type="number" id="inv-discount-value" class="form-input totals-inline-input" value="0" min="0" step="0.01">
+                                    </span>
+                                    <span class="mono" id="inv-discount-amount">-$0.00</span>
+                                </div>
+                                <div class="totals-row total">
+                                    <span>Total</span>
+                                    <span class="mono" id="inv-total">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- ═══════════ INVOICE PREVIEW PAGE ═══════════ -->
+                <div id="preview-invoice-page" class="page" style="display: none;">
+                    <div class="page-header">
+                        <div class="page-header-left">
+                            <h1>Invoice Preview</h1>
+                            <p id="preview-invoice-number">INV-0001</p>
+                        </div>
+                        <div class="page-header-right preview-actions">
+                            <button class="btn btn-secondary" id="preview-back-btn">
+                                <span>←</span>
+                                <span>Back</span>
+                            </button>
+                            <button class="btn btn-secondary" id="preview-edit-btn">
+                                <span>✏️</span>
+                                <span>Edit</span>
+                            </button>
+                            <button class="btn btn-secondary" id="preview-duplicate-btn">
+                                <span>📋</span>
+                                <span>Duplicate</span>
+                            </button>
+                            <button class="btn btn-secondary" id="preview-email-btn">
+                                <span>✉️</span>
+                                <span>Email</span>
+                            </button>
+                            <button class="btn btn-secondary" id="preview-whatsapp-btn">
+                                <span>💬</span>
+                                <span>WhatsApp</span>
+                            </button>
+                            <button class="btn btn-secondary" id="preview-share-btn">
+                                <span>📤</span>
+                                <span>Share PDF</span>
+                            </button>
+                            <button class="btn btn-primary" id="preview-download-btn">
+                                <span>⬇️</span>
+                                <span>Download PDF</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="preview-toolbar">
+                        <div class="template-selector" id="preview-template-selector">
+                            <div class="template-option active" data-template="classic">
+                                <div class="template-name">Classic</div>
+                            </div>
+                            <div class="template-option" data-template="modern">
+                                <div class="template-name">Modern</div>
+                            </div>
+                            <div class="template-option" data-template="bold">
+                                <div class="template-name">Bold</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="preview-container">
+                        <div class="preview-paper" id="preview-paper">
+                            <iframe id="pdf-preview-frame" style="width:100%; height:100%; min-height:800px; border:none; border-radius: var(--radius-md);"></iframe>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════════ CUSTOMERS PAGE ═══════════ -->
+                <div id="customers-page" class="page" style="display: none;">
+                    <div class="page-header">
+                        <div class="page-header-left">
+                            <h1>Customers</h1>
+                            <p>Manage your customer contacts</p>
+                        </div>
+                        <div class="page-header-right">
+                            <button class="btn btn-primary" id="customers-add-btn">
+                                <span>+</span>
+                                <span>Add Customer</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="invoices-toolbar">
+                        <div class="search-bar">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" class="form-input" id="customer-search" placeholder="Search customers...">
+                        </div>
+                    </div>
+
+                    <div class="customers-grid" id="customers-grid">
+                        <!-- Customer cards rendered by app.js -->
+                    </div>
+
+                    <div class="empty-state" id="customers-empty" style="display: none;">
+                        <div class="empty-state-icon">👥</div>
+                        <h3 class="empty-state-title">No customers yet</h3>
+                        <p class="empty-state-text">Add your first customer to start invoicing</p>
+                        <button class="btn btn-primary" id="customers-empty-add">
+                            <span>+</span>
+                            <span>Add Customer</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ═══════════ SETTINGS PAGE ═══════════ -->
+                <div id="settings-page" class="page" style="display: none;">
+                    <div class="page-header">
+                        <div class="page-header-left">
+                            <h1>Settings</h1>
+                            <p>Company profile & preferences</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-sections">
+                        <!-- Company Profile -->
+                        <div class="card settings-section">
+                            <h3 class="invoice-section-title">
+                                <span>🏢</span> Company Profile
+                            </h3>
+                            <form id="company-form">
+                                <div class="form-row" style="align-items: flex-start;">
+                                    <div style="flex: 0 0 auto;">
+                                        <label class="form-label">Company Logo</label>
+                                        <div class="logo-upload" id="logo-upload">
+                                            <img id="company-logo-preview" src="" alt="" style="display: none;">
+                                            <span id="logo-upload-placeholder" class="logo-upload-text">
+                                                <span style="font-size: 2rem;">📷</span><br>
+                                                <small>Click to upload</small>
+                                            </span>
+                                            <input type="file" id="company-logo-input" accept="image/*" style="display: none;">
+                                        </div>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div class="form-group">
+                                            <label class="form-label" for="company-name">Company Name</label>
+                                            <input type="text" id="company-name" class="form-input" placeholder="Your Company Name">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" for="company-email">Email</label>
+                                            <input type="email" id="company-email" class="form-input" placeholder="billing@company.com">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label" for="company-phone">Phone</label>
+                                        <input type="tel" id="company-phone" class="form-input" placeholder="+1 (555) 123-4567">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="company-website">Website</label>
+                                        <input type="url" id="company-website" class="form-input" placeholder="https://yourcompany.com">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="company-address">Address</label>
+                                    <input type="text" id="company-address" class="form-input" placeholder="123 Business Street">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label" for="company-city">City</label>
+                                        <input type="text" id="company-city" class="form-input" placeholder="City">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="company-state">State</label>
+                                        <input type="text" id="company-state" class="form-input" placeholder="State">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="company-zip">ZIP Code</label>
+                                        <input type="text" id="company-zip" class="form-input" placeholder="12345">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label" for="company-country">Country</label>
+                                        <input type="text" id="company-country" class="form-input" placeholder="United States">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="company-tax-id">Tax ID / GST</label>
+                                        <input type="text" id="company-tax-id" class="form-input" placeholder="XX-XXXXXXX">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="company-default-currency">Default Currency</label>
+                                        <select id="company-default-currency" class="form-input form-select">
+                                            <option value="USD">USD ($)</option>
+                                            <option value="EUR">EUR (€)</option>
+                                            <option value="GBP">GBP (£)</option>
+                                            <option value="INR">INR (₹)</option>
+                                            <option value="CAD">CAD (C$)</option>
+                                            <option value="AUD">AUD (A$)</option>
+                                            <option value="JPY">JPY (¥)</option>
+                                            <option value="SGD">SGD (S$)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; gap: 12px; margin-top: 8px;">
+                                    <button type="submit" class="btn btn-primary" id="company-save-btn">
+                                        <span>💾</span>
+                                        <span>Save Profile</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Data Management -->
+                        <div class="card settings-section">
+                            <h3 class="invoice-section-title">
+                                <span>💾</span> Data Management
+                            </h3>
+                            <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 0.9rem;">
+                                Your data is stored locally in your browser. Export it to keep a backup.
+                            </p>
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                <button class="btn btn-secondary" id="export-data-btn">
+                                    <span>📥</span>
+                                    <span>Export All Data</span>
+                                </button>
+                                <button class="btn btn-secondary" id="import-data-btn">
+                                    <span>📤</span>
+                                    <span>Import Data</span>
+                                </button>
+                                <input type="file" id="import-file-input" accept=".json" style="display: none;">
+                                <button class="btn btn-danger" id="clear-data-btn">
+                                    <span>🗑️</span>
+                                    <span>Clear All Data</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Account -->
+                        <div class="card settings-section">
+                            <h3 class="invoice-section-title">
+                                <span>👤</span> Account
+                            </h3>
+                            <div class="account-info">
+                                <p><strong>Name:</strong> <span id="settings-user-name">-</span></p>
+                                <p><strong>Email:</strong> <span id="settings-user-email">-</span></p>
+                            </div>
+                            <button class="btn btn-danger" id="settings-logout-btn" style="margin-top: 16px;">
+                                <span>🚪</span>
+                                <span>Sign Out</span>
+                            </button>
+                        </div>
+
+                        <!-- Legal -->
+                        <div class="card settings-section">
+                            <h3 class="invoice-section-title">
+                                <span>⚖️</span> Legal & Privacy
+                            </h3>
+                            <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 0.9rem;">
+                                Read our privacy policies regarding data usage and Google AdSense guidelines.
+                            </p>
+                            <button class="btn btn-secondary" id="settings-privacy-btn" type="button">
+                                <span>🔒</span>
+                                <span>View Privacy Policy</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- CUSTOMER MODAL (shared)                      -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="modal-overlay" id="customer-modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="customer-modal-title">Add Customer</h3>
+                <button class="btn btn-icon modal-close" id="customer-modal-close">✕</button>
+            </div>
+            <form id="customer-modal-form">
+                <input type="hidden" id="customer-modal-id" value="">
+                <div class="form-group">
+                    <label class="form-label" for="cust-name">Customer Name *</label>
+                    <input type="text" id="cust-name" class="form-input" placeholder="Customer or Company name" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="cust-email">Email</label>
+                        <input type="email" id="cust-email" class="form-input" placeholder="customer@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="cust-phone">Phone</label>
+                        <input type="tel" id="cust-phone" class="form-input" placeholder="+1 (555) 000-0000">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="cust-address">Address</label>
+                    <input type="text" id="cust-address" class="form-input" placeholder="Street address">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="cust-city">City</label>
+                        <input type="text" id="cust-city" class="form-input" placeholder="City">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="cust-state">State</label>
+                        <input type="text" id="cust-state" class="form-input" placeholder="State">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="cust-zip">ZIP Code</label>
+                        <input type="text" id="cust-zip" class="form-input" placeholder="12345">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="cust-country">Country</label>
+                        <input type="text" id="cust-country" class="form-input" placeholder="Country">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="customer-modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="customer-modal-save">Save Customer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PRIVACY POLICY MODAL -->
+    <div class="modal-overlay" id="privacy-modal-overlay">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+                    <span>⚖️</span> Privacy Policy
+                </h3>
+                <button class="btn btn-icon modal-close" id="privacy-modal-close">✕</button>
+            </div>
+            <div class="modal-body" style="font-size: 0.9rem; line-height: 1.6; max-height: 60vh; overflow-y: auto; padding-right: 8px; color: var(--text-primary);">
+                <p style="margin-bottom: 12px;">Last updated: June 9, 2026</p>
+                <p style="margin-bottom: 16px;">This Privacy Policy describes how InvoiceFlow collects, uses, and discloses your information when you use our application.</p>
+                
+                <h4 style="font-size: 1rem; font-weight: 700; margin-top: 16px; margin-bottom: 8px; color: var(--text-primary);">1. Client-Side Data Storage</h4>
+                <p style="margin-bottom: 16px;">InvoiceFlow is designed as a privacy-first web application. All invoice documents, customer contact profiles, company information, and settings are stored locally in your browser's IndexedDB database. We do not transmit, sync, or back up your business data to external servers. Your financial data stays entirely on your machine unless you choose to export it manually.</p>
+                
+                <h4 style="font-size: 1rem; font-weight: 700; margin-top: 16px; margin-bottom: 8px; color: var(--text-primary);">2. Google AdSense & Third-Party Cookies</h4>
+                <p style="margin-bottom: 12px;">We use Google AdSense to serve advertisements on our website to help fund the development of this tool. For AdSense to function properly:</p>
+                <ul style="margin-left: 20px; margin-bottom: 16px; list-style-type: disc;">
+                    <li style="margin-bottom: 8px;">Third-party vendors, including Google, use cookies to serve ads based on a user's prior visits to this website or other websites.</li>
+                    <li style="margin-bottom: 8px;">Google's use of advertising cookies enables it and its partners to serve ads to our users based on their visit to our sites and/or other sites on the Internet.</li>
+                    <li style="margin-bottom: 8px;">Users may opt out of personalized advertising by visiting <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener" style="color: var(--accent-primary); text-decoration: underline;">Google Ads Settings</a>. Alternatively, users can opt out of a third-party vendor's use of cookies for personalized advertising by visiting <a href="https://www.aboutads.info" target="_blank" rel="noopener" style="color: var(--accent-primary); text-decoration: underline;">www.aboutads.info</a>.</li>
+                </ul>
+
+                <h4 style="font-size: 1rem; font-weight: 700; margin-top: 16px; margin-bottom: 8px; color: var(--text-primary);">3. Consent</h4>
+                <p style="margin-bottom: 16px;">By using our website, you hereby consent to our Privacy Policy and agree to its terms.</p>
+                
+                <h4 style="font-size: 1rem; font-weight: 700; margin-top: 16px; margin-bottom: 8px; color: var(--text-primary);">4. Contact Information</h4>
+                <p style="margin-bottom: 8px;">If you have any questions about this Privacy Policy, you can contact us at our support address.</p>
+            </div>
+            <div class="modal-footer" style="margin-top: 20px; padding-top: 16px;">
+                <button type="button" class="btn btn-primary" id="privacy-modal-ok">Got it</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SCRIPTS (order matters!)                     -->
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- CDN Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/dexie@4.0.11/dist/dexie.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.min.js"></script>
+
+    <!-- Data Layer -->
+    <script src="js/db.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/invoices.js"></script>
+    <script src="js/customers.js"></script>
+    <script src="js/company.js"></script>
+
+    <!-- UI Layer -->
+    <script src="js/ui.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/pdf.js"></script>
+
+    <!-- Main App -->
+    <script src="js/app.js"></script>
+</body>
+</html>
