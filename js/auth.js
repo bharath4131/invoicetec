@@ -1,5 +1,5 @@
 /* ============================================================
-   auth.js — Authentication Module
+   auth.js — Authentication Module (Local PBKDF2)
    Invoice Generator Application
    ============================================================ */
 
@@ -68,7 +68,7 @@ window.Auth = {
    * @param {string} name
    * @param {string} email
    * @param {string} password
-   * @returns {Promise<number>} The new user's id.
+   * @returns {Promise<Object|number>} The new user's id or registration result object.
    */
   async register(name, email, password) {
     try {
@@ -87,17 +87,87 @@ window.Auth = {
         throw new Error('Password must be at least 6 characters long.');
       }
 
-      // --- Check for existing email ---
-      var existing = await db.users.where('email').equals(email.trim().toLowerCase()).first();
+      // --- Firebase Sign Up if Enabled ---
+      if (window.Sync && Sync.isEnabled()) {
+        const client = Sync.getClient();
+        if (client) {
+          try {
+            const userCredential = await client.auth().createUserWithEmailAndPassword(
+              email.trim().toLowerCase(),
+              password
+            );
+            const user = userCredential.user;
+            
+            // Set displayName in Firebase Auth
+            await user.updateProfile({
+              displayName: name.trim()
+            });
+
+            // Match or create local user
+            let users = await db.users.toArray();
+            let existingUser = users.find(u => u.email.trim().toLowerCase() === email.trim().toLowerCase() || (u.supabaseId && u.supabaseId === user.uid));
+            let localUserId;
+
+            if (existingUser) {
+              existingUser.supabaseId = user.uid;
+              existingUser.name = name.trim();
+              await db.users.put(existingUser);
+              localUserId = existingUser.id;
+            } else {
+              localUserId = await db.users.add({
+                name: name.trim(),
+                email: email.trim().toLowerCase(),
+                supabaseId: user.uid,
+                createdAt: new Date().toISOString()
+              });
+            }
+
+            const oldUser = this.getCurrentUser();
+            const oldUserId = oldUser ? oldUser.id : null;
+
+            var session = {
+              id: localUserId,
+              name: name.trim(),
+              email: email.trim().toLowerCase(),
+              supabaseId: user.uid
+            };
+            sessionStorage.setItem('currentUser', JSON.stringify(session));
+
+            // Migrate local offline data to user
+            await this.migrateLocalDataToUser(localUserId, oldUserId);
+
+            // Trigger initial sync push
+            try {
+              await Sync.push(localUserId);
+            } catch (syncErr) {
+              console.error('Initial sync push on registration failed:', syncErr);
+            }
+
+            return localUserId;
+          } catch (err) {
+            if (err.code === 'auth/email-already-in-use') {
+              throw new Error('An account with this email already exists.');
+            } else if (err.code === 'auth/weak-password') {
+              throw new Error('Password must be at least 6 characters long.');
+            } else if (err.code === 'auth/invalid-email') {
+              throw new Error('Please enter a valid email address.');
+            } else {
+              throw new Error(err.message);
+            }
+          }
+        }
+      }
+
+      // --- Fallback Local Registration ---
+      let users = await db.users.toArray();
+      var existing = users.find(u => u.email.trim().toLowerCase() === email.trim().toLowerCase());
       if (existing) {
         throw new Error('An account with this email already exists.');
       }
 
-      // --- Hash password ---
       var salt = crypto.getRandomValues(new Uint8Array(16));
       var hashedPassword = await this.hashPassword(password, salt);
 
-      // --- Create user ---
       var userId = await db.users.add({
         name: name.trim(),
         email: email.trim().toLowerCase(),
@@ -106,7 +176,6 @@ window.Auth = {
         createdAt: new Date().toISOString()
       });
 
-      // --- Store session ---
       var session = {
         id: userId,
         name: name.trim(),
@@ -124,7 +193,7 @@ window.Auth = {
    * Log in an existing user.
    * @param {string} email
    * @param {string} password
-   * @returns {Promise<Object>} The user object.
+   * @returns {Promise<Object>} The user session object.
    */
   async login(email, password) {
     try {
@@ -135,13 +204,84 @@ window.Auth = {
         throw new Error('Password is required.');
       }
 
-      // --- Find user ---
-      var user = await db.users.where('email').equals(email.trim().toLowerCase()).first();
+      // --- Firebase Sign In if Enabled ---
+      if (window.Sync && Sync.isEnabled()) {
+        const client = Sync.getClient();
+        if (client) {
+          try {
+            const userCredential = await client.auth().signInWithEmailAndPassword(
+              email.trim().toLowerCase(),
+              password
+            );
+            const user = userCredential.user;
+
+            // Match or create local user
+            let users = await db.users.toArray();
+            let existingUser = users.find(u => u.email.trim().toLowerCase() === email.trim().toLowerCase() || (u.supabaseId && u.supabaseId === user.uid));
+            let localUserId;
+
+            if (existingUser) {
+              existingUser.supabaseId = user.uid;
+              if (user.displayName) {
+                existingUser.name = user.displayName;
+              }
+              await db.users.put(existingUser);
+              localUserId = existingUser.id;
+            } else {
+              localUserId = await db.users.add({
+                name: user.displayName || 'Cloud User',
+                email: user.email.toLowerCase(),
+                supabaseId: user.uid,
+                createdAt: new Date().toISOString()
+              });
+            }
+
+            const oldUser = this.getCurrentUser();
+            const oldUserId = oldUser ? oldUser.id : null;
+
+            // Store session
+            var session = {
+              id: localUserId,
+              name: user.displayName || (existingUser ? existingUser.name : 'Cloud User'),
+              email: user.email.toLowerCase(),
+              supabaseId: user.uid
+            };
+            sessionStorage.setItem('currentUser', JSON.stringify(session));
+
+            // Migrate local offline data to user
+            await this.migrateLocalDataToUser(localUserId, oldUserId);
+
+            // Pull & Sync
+            try {
+              await Sync.pull(localUserId);
+            } catch (syncErr) {
+              console.error('Initial sync pull on login failed:', syncErr);
+            }
+
+            return session;
+          } catch (err) {
+            if (err.code === 'auth/user-not-found') {
+              throw new Error('Account not found');
+            } else if (err.code === 'auth/wrong-password') {
+              throw new Error('Incorrect password. Please try again.');
+            } else if (err.code === 'auth/invalid-credential') {
+              // Firebase returns this combined code for security. To support new devices,
+              // we display a combined error message.
+              throw new Error('Incorrect email or password. Please try again.');
+            } else {
+              throw new Error(err.message);
+            }
+          }
+        }
+      }
+
+      // --- Fallback Local PBKDF2 Login ---
+      let users = await db.users.toArray();
+      var user = users.find(u => u.email.trim().toLowerCase() === email.trim().toLowerCase());
       if (!user) {
         throw new Error('No account found with this email address.');
       }
 
-      // --- Verify password ---
       var salt = this.hexToBuffer(user.salt);
       var hashedPassword = await this.hashPassword(password, salt);
       var hashedHex = this.bufferToHex(hashedPassword);
@@ -150,7 +290,6 @@ window.Auth = {
         throw new Error('Incorrect password. Please try again.');
       }
 
-      // --- Store session ---
       var session = {
         id: user.id,
         name: user.name,
@@ -158,9 +297,43 @@ window.Auth = {
       };
       sessionStorage.setItem('currentUser', JSON.stringify(session));
 
-      return user;
+      return session;
     } catch (error) {
       throw error;
+    }
+  },
+
+  /**
+   * Migrate offline local database records from oldUserId to newUserId.
+   * @param {number} newUserId - The new local user ID.
+   * @param {number|null} oldUserId - The old local user ID.
+   */
+  async migrateLocalDataToUser(newUserId, oldUserId) {
+    if (!newUserId || !oldUserId || newUserId === oldUserId) return;
+
+    try {
+      await db.transaction('rw', db.invoices, db.customers, db.companyProfiles, async () => {
+        // Migrate invoices
+        const invoices = await db.invoices.where('userId').equals(oldUserId).toArray();
+        for (const inv of invoices) {
+          await db.invoices.update(inv.id, { userId: newUserId });
+        }
+
+        // Migrate customers
+        const customers = await db.customers.where('userId').equals(oldUserId).toArray();
+        for (const cust of customers) {
+          await db.customers.update(cust.id, { userId: newUserId });
+        }
+
+        // Migrate company profiles
+        const profiles = await db.companyProfiles.where('userId').equals(oldUserId).toArray();
+        for (const prof of profiles) {
+          await db.companyProfiles.update(prof.id, { userId: newUserId });
+        }
+      });
+      console.log(`Successfully migrated local data from userId ${oldUserId} to ${newUserId}`);
+    } catch (err) {
+      console.error('Data migration failed:', err);
     }
   },
 
@@ -189,8 +362,78 @@ window.Auth = {
   /**
    * Log out the current user.
    */
-  logout() {
+  async logout() {
     sessionStorage.removeItem('currentUser');
+    if (window.Sync && Sync.isEnabled()) {
+      try {
+        const client = Sync.getClient();
+        if (client) {
+          await client.auth().signOut();
+        }
+      } catch (err) {
+        console.error('Firebase signOut failed:', err);
+      }
+    }
+  },
+
+  /**
+   * Delete the current user's account permanently.
+   */
+  async deleteAccount() {
+    const user = this.getCurrentUser();
+    if (!user) throw new Error('No user is currently logged in.');
+
+    // 1. If Firebase is enabled, delete in the cloud first
+    if (window.Sync && Sync.isEnabled()) {
+      const client = Sync.getClient();
+      if (client) {
+        try {
+          const currentUser = client.auth().currentUser;
+          if (currentUser) {
+            // Delete Firestore sync document first
+            const firestoreDb = client.firestore();
+            await firestoreDb.collection('user_sync').doc(currentUser.uid).delete();
+            // Delete Auth account
+            await currentUser.delete();
+          }
+        } catch (err) {
+          throw new Error('Failed to delete account from cloud: ' + err.message);
+        }
+      }
+    }
+
+    // 2. Delete all user data in local IndexedDB
+    // Delete user's invoices and items
+    if (window.Invoices) {
+      const invoices = await Invoices.getAll(user.id);
+      for (const inv of invoices) {
+        await Invoices.delete(inv.id);
+      }
+    }
+
+    // Delete customers
+    if (window.Customers) {
+      const customers = await Customers.getAll(user.id);
+      for (const cust of customers) {
+        try { await Customers.delete(cust.id); } catch (e) { /* skip */ }
+      }
+    }
+
+    // Delete local user profile
+    await db.users.delete(user.id);
+
+    // 3. Clear session storage and sign out
+    sessionStorage.removeItem('currentUser');
+    if (window.Sync && Sync.isEnabled()) {
+      try {
+        const client = Sync.getClient();
+        if (client) {
+          await client.auth().signOut();
+        }
+      } catch (err) {
+        console.error('Firebase signOut during account deletion failed:', err);
+      }
+    }
   },
 
   /**

@@ -10,6 +10,7 @@ window.Router = (function () {
   // Maps hash patterns to { pageId, handler }
   // handler is the global function name from app.js
   var routeDefs = [
+    { pattern: '#/landing',      pageId: 'landing-page',         handler: 'showLandingPage',    isPublic: true },
     { pattern: '#/login',        pageId: 'auth-page',            handler: 'showAuthPage',       isPublic: true },
     { pattern: '#/dashboard',    pageId: 'dashboard-page',       handler: 'showDashboard' },
     { pattern: '#/invoices',     pageId: 'invoices-page',        handler: 'showInvoices' },
@@ -75,9 +76,13 @@ window.Router = (function () {
   function navigate(hash) {
     hash = hash || window.location.hash || '#/';
 
-    // Default / empty → dashboard
+    // Default / empty → landing (if not logged in) or dashboard (if logged in)
     if (!hash || hash === '#' || hash === '#/') {
-      window.location.hash = '#/dashboard';
+      if (window.Auth && Auth.isLoggedIn()) {
+        window.location.hash = '#/dashboard';
+      } else {
+        window.location.hash = '#/landing';
+      }
       return;
     }
 

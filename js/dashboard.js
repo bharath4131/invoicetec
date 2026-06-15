@@ -160,10 +160,29 @@ window.Dashboard = (function () {
 
       var rates = await _getExchangeRates();
       var allInvoices = await Invoices.getAll(userId);
-      var stats = _calculateStats(allInvoices, selectedCurrency, rates);
 
       UI.hideLoading(container);
 
+      if (allInvoices.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state animate-fadeIn" style="text-align: center; padding: 48px 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: var(--bg-secondary); border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-top: 24px;">
+            <div style="font-size: 4rem; margin-bottom: 8px;">👋</div>
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">Welcome to InvoiceFlow!</h2>
+            <p style="color: var(--text-secondary); max-width: 450px; line-height: 1.6; margin: 0 auto 12px;">You haven't created any invoices yet. Get started in seconds by adding your company profile, a customer, and generating your first invoice!</p>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+              <button class="btn btn-primary" onclick="window.location.hash='#/create'">
+                <span>➕</span> Create Your First Invoice
+              </button>
+              <button class="btn btn-secondary" onclick="window.location.hash='#/settings'">
+                <span>⚙️</span> Setup Company Profile
+              </button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      var stats = _calculateStats(allInvoices, selectedCurrency, rates);
       var html = '';
 
       // ── 1. Stat Cards ────────────────────────────────────────

@@ -19,14 +19,247 @@
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/pages.css">
     <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/landing.css">
 
     <!-- Favicon (inline SVG) -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
 
-    <!-- Google AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXX" crossorigin="anonymous"></script>
+
 </head>
 <body>
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- LANDING PAGE                                 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="landing-page" class="page" style="display: none;">
+        <!-- Header -->
+        <header class="landing-header">
+            <a href="#/landing" class="landing-brand">
+                <span class="landing-brand-icon">📄</span>
+                <span>InvoiceFlow</span>
+            </a>
+            <nav class="landing-nav">
+                <a href="#landing-features" class="landing-nav-link">Features</a>
+                <a href="#landing-steps" class="landing-nav-link">How It Works</a>
+                <a href="#landing-faq" class="landing-nav-link">FAQ</a>
+                <a href="#landing-about" class="landing-nav-link">About</a>
+                <a href="#landing-contact" class="landing-nav-link">Contact</a>
+            </nav>
+            <div class="landing-auth-btn">
+                <a href="#/login" class="btn btn-secondary btn-sm" id="landing-signin-btn">Sign In</a>
+                <a href="#/login?tab=register" class="btn btn-primary btn-sm" id="landing-signup-btn">Get Started</a>
+            </div>
+        </header>
+
+        <!-- Hero Section -->
+        <section class="landing-hero">
+            <div class="landing-hero-badge">🔒 Local-First & Private</div>
+            <h1 class="landing-hero-title">Create Beautiful Invoices <span>Instantly</span></h1>
+            <p class="landing-hero-desc">InvoiceFlow is a professional invoice generator built for freelancers, agencies, and small businesses. Create, manage, and download PDF invoices securely—all from your browser.</p>
+            <div class="landing-hero-ctas">
+                <a href="#/login?tab=register" class="btn btn-primary" id="landing-hero-primary-btn" style="padding: 12px 28px; font-size: 1.05rem;">Start Generating Free</a>
+                <a href="#landing-features" class="btn btn-secondary" style="padding: 12px 28px; font-size: 1.05rem;">Explore Features</a>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="landing-section" id="landing-features">
+            <div class="landing-section-header">
+                <h2 class="landing-section-title">Powerful Features, Zero Complications</h2>
+                <p class="landing-section-desc">Everything you need to bill your clients professionally, without any monthly fees or setup headaches.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-card-icon">🎨</div>
+                    <h3 class="feature-card-title">Professional Templates</h3>
+                    <p class="feature-card-desc">Choose between Classic, Modern, and Bold design layouts to match your brand style and impress your clients.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card-icon">🌐</div>
+                    <h3 class="feature-card-title">Multi-Currency Billing</h3>
+                    <p class="feature-card-desc">Fully supports invoicing in USD ($), EUR (€), GBP (£), INR (₹), CAD (C$), AUD (A$), JPY (¥), and SGD (S$).</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card-icon">🔒</div>
+                    <h3 class="feature-card-title">100% Client-Side Privacy</h3>
+                    <p class="feature-card-desc">Your clients, records, and financial profiles are stored locally in your browser (IndexedDB). Your data never hits our servers.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card-icon">✉️</div>
+                    <h3 class="feature-card-title">Direct Sharing</h3>
+                    <p class="feature-card-desc">Quick-share links compiled in one-click for Gmail Web, WhatsApp, or natively using your device's sharing tray.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card-icon">📊</div>
+                    <h3 class="feature-card-title">Financial Dashboard</h3>
+                    <p class="feature-card-desc">Analyze monthly/yearly earnings trends, manage customer contact lists, and view outstanding balances in real-time.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card-icon">⚡</div>
+                    <h3 class="feature-card-title">Instant PDF Engine</h3>
+                    <p class="feature-card-desc">Robust client-side rendering compiles print-ready vector PDF files instantly for print or digital download.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section class="landing-section" id="landing-steps">
+            <div class="landing-section-header">
+                <h2 class="landing-section-title">Generate Invoices in 4 Simple Steps</h2>
+                <p class="landing-section-desc">Create professional invoices in less than a minute. Here is how simple the process is.</p>
+            </div>
+            <div class="steps-container">
+                <div class="step-row">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Enter Company Profile</h3>
+                        <p class="step-desc">Configure your business details: company name, email, phone, address, tax ID, logo, and preferred default currency in Settings.</p>
+                    </div>
+                </div>
+                <div class="step-row">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Select Customer Profile</h3>
+                        <p class="step-desc">Choose an existing customer from your directory or add a new customer contact directly on the invoice form.</p>
+                    </div>
+                </div>
+                <div class="step-row">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Add Line Items & Totals</h3>
+                        <p class="step-desc">Input items or services, quantities, and rates. The system automatically handles VAT/Tax percentages and fixed or percentage discounts.</p>
+                    </div>
+                </div>
+                <div class="step-row">
+                    <div class="step-num">4</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Choose Template & Share</h3>
+                        <p class="step-desc">Select your template, preview the layout in the interactive previewer, download the PDF file, or share the invoice using email/WhatsApp shortcuts.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="landing-section" id="landing-faq">
+            <div class="landing-section-header">
+                <h2 class="landing-section-title">Frequently Asked Questions</h2>
+                <p class="landing-section-desc">Have questions about InvoiceFlow? Here are answers to the most common queries.</p>
+            </div>
+            <div class="faq-container">
+                <div class="faq-card">
+                    <div class="faq-question-row">
+                        <span>Is InvoiceFlow completely free to use?</span>
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        Yes! InvoiceFlow is a 100% free tool. There are no monthly subscriptions, paywalls, or limits on the number of invoices or customers you can manage.
+                    </div>
+                </div>
+                <div class="faq-card">
+                    <div class="faq-question-row">
+                        <span>Where is my business data stored?</span>
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        To prioritize your privacy, we store all database records locally in your browser's IndexedDB. Your invoice history, client listings, and company profiles are never sent to our servers. Your financial data stays entirely under your control.
+                    </div>
+                </div>
+                <div class="faq-card">
+                    <div class="faq-question-row">
+                        <span>Can I backup or transfer my data?</span>
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        Absolutely. Under the Settings page, we provide full Export and Import capabilities. You can download your entire database as a single JSON file at any time and import it on another device or browser.
+                    </div>
+                </div>
+                <div class="faq-card">
+                    <div class="faq-question-row">
+                        <span>Does the tool support multiple currencies?</span>
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        Yes, you can configure your company's default currency and customize the currency for each invoice individually. We support USD ($), EUR (€), GBP (£), INR (₹), CAD (C$), AUD (A$), JPY (¥), and SGD (S$).
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Us Section -->
+        <section class="landing-section" id="landing-about">
+            <div class="landing-section-header">
+                <h2 class="landing-section-title">About InvoiceFlow</h2>
+                <p class="landing-section-desc">Learn about the philosophy, architecture, and team behind the platform.</p>
+            </div>
+            <div class="about-card">
+                <h3>Our Mission: Privacy First Invoicing</h3>
+                <p>InvoiceFlow was founded with a simple belief: billing tools shouldn't harvest your sensitive business data. Traditional online invoice builders require you to upload your client lists, rate sheets, and revenue details to their servers. We designed a modern, local-first alternative.</p>
+                <p>By using modern browser technologies like Dexie.js (IndexedDB) and client-side PDF compilers (pdfmake), we ensure all compute and database storage occurs entirely on your device. This architecture provides near-instant loading times, offline usability, and absolute privacy for your business operations.</p>
+            </div>
+        </section>
+
+        <!-- Contact Us Section -->
+        <section class="landing-section" id="landing-contact">
+            <div class="landing-section-header">
+                <h2 class="landing-section-title">Get in Touch</h2>
+                <p class="landing-section-desc">Have suggestions, feature requests, or questions? Send us a message and we'll get back to you.</p>
+            </div>
+            <div class="contact-container">
+                <form class="contact-form" id="landing-contact-form" name="contact" method="POST" data-netlify="true">
+                    <input type="hidden" name="form-name" value="contact">
+                    <div class="form-group">
+                        <label class="form-label" for="contact-name">Full Name</label>
+                        <input type="text" id="contact-name" name="name" class="form-input" placeholder="Your Name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="contact-email">Email Address</label>
+                        <input type="email" id="contact-email" name="email" class="form-input" placeholder="your@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="contact-message">Your Message</label>
+                        <textarea id="contact-message" name="message" class="form-input form-textarea" placeholder="How can we help you?" style="min-height: 120px;" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="contact-submit-btn" style="width: 100%; justify-content: center; height: 44px;">Send Message</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="landing-footer">
+            <div class="footer-content">
+                <div class="footer-brand-side">
+                    <a href="#/landing" class="landing-brand">
+                        <span class="landing-brand-icon">📄</span>
+                        <span>InvoiceFlow</span>
+                    </a>
+                    <p class="footer-desc">Professional invoicing made simple, fast, and completely private. All data is kept secure on your local device.</p>
+                </div>
+                <div class="footer-links-side">
+                    <div class="footer-column">
+                        <span class="footer-column-title">Product</span>
+                        <a href="#landing-features" class="footer-link">Features</a>
+                        <a href="#landing-steps" class="footer-link">How It Works</a>
+                        <a href="#landing-faq" class="footer-link">FAQ</a>
+                    </div>
+                    <div class="footer-column">
+                        <span class="footer-column-title">Company</span>
+                        <a href="#landing-about" class="footer-link">About Us</a>
+                        <a href="#landing-contact" class="footer-link">Contact Us</a>
+                    </div>
+                    <div class="footer-column">
+                        <span class="footer-column-title">Legal</span>
+                        <a class="footer-link" id="landing-privacy-link">Privacy Policy</a>
+                        <a class="footer-link" id="landing-terms-link">Terms of Service</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>© 2026 InvoiceFlow. All rights reserved.</span>
+                <span>Designed for privacy.</span>
+            </div>
+        </footer>
+    </div>
+
     <!-- ═══════════════════════════════════════════ -->
     <!-- AUTH PAGE                                    -->
     <!-- ═══════════════════════════════════════════ -->
@@ -87,7 +320,7 @@
                 <div class="auth-footer">
                     <p class="auth-footer-text">Your data stays private — stored only in your browser.</p>
                     <p class="auth-footer-text" style="margin-top: 8px;">
-                        <a href="#" id="auth-privacy-link" style="color: var(--accent-primary); text-decoration: none; font-weight: 500;">Privacy Policy</a>
+                        <a href="javascript:void(0)" id="auth-privacy-link" style="color: var(--accent-primary); text-decoration: none; font-weight: 500;">Privacy Policy</a>
                     </p>
                 </div>
             </div>
@@ -144,7 +377,7 @@
                     </div>
                 </div>
                 <div style="text-align: center; border-top: 1px solid var(--border-color); padding-top: 8px;">
-                    <a href="#" id="sidebar-privacy-link" style="color: var(--text-tertiary); text-decoration: none; font-size: 0.75rem; font-weight: 500; transition: color var(--transition-fast);">Privacy Policy</a>
+                    <a href="javascript:void(0)" id="sidebar-privacy-link" style="color: var(--text-tertiary); text-decoration: none; font-size: 0.75rem; font-weight: 500; transition: color var(--transition-fast);">Privacy Policy</a>
                 </div>
             </div>
         </aside>
@@ -214,7 +447,7 @@
                     <div class="adsense-container">
                         <ins class="adsbygoogle"
                              style="display:block"
-                             data-ad-client="ca-pub-XXXXXXXXXX"
+                             data-ad-client="ca-pub-3114500520120157"
                              data-ad-slot="1234567890"
                              data-ad-format="auto"
                              data-full-width-responsive="true"></ins>
@@ -285,7 +518,7 @@
                     <div class="adsense-container">
                         <ins class="adsbygoogle"
                              style="display:block"
-                             data-ad-client="ca-pub-XXXXXXXXXX"
+                             data-ad-client="ca-pub-3114500520120157"
                              data-ad-slot="0987654321"
                              data-ad-format="auto"
                              data-full-width-responsive="true"></ins>
@@ -715,10 +948,80 @@
                                 <p><strong>Name:</strong> <span id="settings-user-name">-</span></p>
                                 <p><strong>Email:</strong> <span id="settings-user-email">-</span></p>
                             </div>
-                            <button class="btn btn-danger" id="settings-logout-btn" style="margin-top: 16px;">
-                                <span>🚪</span>
-                                <span>Sign Out</span>
-                            </button>
+                            <div style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
+                                <button class="btn btn-secondary" id="settings-logout-btn" style="margin-top: 0;">
+                                    <span>🚪</span>
+                                    <span>Sign Out</span>
+                                </button>
+                                <button class="btn btn-danger" id="delete-account-btn" style="margin-top: 0; background: var(--bg-primary); color: #ef4444; border: 1px dashed #ef4444;">
+                                    <span>⚠️</span>
+                                    <span>Delete Account</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Cloud Database Sync (Firebase) -->
+                        <div class="card settings-section">
+                            <h3 class="invoice-section-title">
+                                <span>🌐</span> Cloud Database Sync (Firebase)
+                            </h3>
+                            <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 0.9rem;">
+                                Synchronize and access your invoices, customers, and business data securely across multiple devices using your account credentials.
+                            </p>
+                            <form id="firebase-sync-form" autocomplete="off">
+                                <div class="form-row" style="align-items: center; margin-bottom: 16px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                                    <label class="form-label" style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+                                        <input type="checkbox" id="firebase-enabled" style="width: 18px; height: 18px; cursor: pointer;">
+                                        <strong>Enable Cloud Sync</strong>
+                                    </label>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span id="sync-status-badge" class="landing-hero-badge" style="background: var(--bg-tertiary); color: var(--text-secondary); font-size: 0.75rem; text-transform: none; border-radius: 6px;">Status: Disconnected</span>
+                                    </div>
+                                </div>
+
+                                <!-- Collapsible Advanced Settings (Optional custom database) -->
+                                <details style="margin-bottom: 16px; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; background: var(--bg-tertiary);">
+                                    <summary style="cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); user-select: none;">
+                                        🔧 Advanced: Use Custom Firebase Project
+                                    </summary>
+                                    <div id="firebase-credentials-fields" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 12px;">
+                                        <div class="form-group">
+                                            <label class="form-label" for="firebase-api-key">API Key</label>
+                                            <input type="password" id="firebase-api-key" class="form-input" placeholder="AIzaSy...">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" for="firebase-auth-domain">Auth Domain</label>
+                                            <input type="text" id="firebase-auth-domain" class="form-input" placeholder="project-id.firebaseapp.com">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" for="firebase-project-id">Project ID</label>
+                                            <input type="text" id="firebase-project-id" class="form-input" placeholder="project-id">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" for="firebase-storage-bucket">Storage Bucket</label>
+                                            <input type="text" id="firebase-storage-bucket" class="form-input" placeholder="project-id.appspot.com">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" for="firebase-messaging-sender-id">Messaging Sender ID</label>
+                                            <input type="text" id="firebase-messaging-sender-id" class="form-input" placeholder="1234567890">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" for="firebase-app-id">App ID</label>
+                                            <input type="text" id="firebase-app-id" class="form-input" placeholder="1:12345:web:abcd">
+                                        </div>
+                                    </div>
+                                    <div style="margin-top: 12px; font-size: 0.75rem; color: var(--text-secondary); line-height: 1.5;">
+                                        Leave these fields blank to use the website's default shared cloud database sync. Fill them out only if you wish to run syncing on your own private Firebase project.
+                                    </div>
+                                </details>
+
+                                <div style="display: flex; align-items: center; justify-content: flex-start; margin-top: 16px;">
+                                    <button type="submit" class="btn btn-primary" id="firebase-save-btn">
+                                        <span>💾</span>
+                                        <span>Save Sync Settings</span>
+                                    </button>
+                                </div>
+                            </form>
                         </div>
 
                         <!-- Legal -->
@@ -834,6 +1137,48 @@
         </div>
     </div>
 
+    <!-- TERMS OF SERVICE MODAL -->
+    <div class="modal-overlay" id="terms-modal-overlay">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+                    <span>⚖️</span> Terms of Service
+                </h3>
+                <button class="btn btn-icon modal-close" id="terms-modal-close">✕</button>
+            </div>
+            <div class="modal-body" style="font-size: 0.9rem; line-height: 1.6; max-height: 60vh; overflow-y: auto; padding-right: 8px; color: var(--text-primary);">
+                <p style="margin-bottom: 12px;">Last updated: June 12, 2026</p>
+                <p style="margin-bottom: 16px;">Welcome to InvoiceFlow. By using our website, tools, and services, you agree to comply with and be bound by the following Terms of Service.</p>
+                
+                <h4 style="font-size: 1rem; font-weight: 700; margin-top: 16px; margin-bottom: 8px; color: var(--text-primary);">1. Terms of Use</h4>
+                <p style="margin-bottom: 16px;">InvoiceFlow is a client-side invoice generator utility. All calculations, invoice formatting, and operations are run in your local browser environment. You are entirely responsible for the invoices you generate and send, ensuring they are accurate, legal, and comply with your local tax regulations.</p>
+                
+                <h4 style="font-size: 1rem; font-weight: 700; margin-top: 16px; margin-bottom: 8px; color: var(--text-primary);">2. Service Availability & Local Storage</h4>
+                <p style="margin-bottom: 16px;">We do not guarantee backup of your data. Your data is stored locally in your browser's IndexedDB database. If you clear your browser cache, storage, or reset your system, your local data may be permanently deleted. We encourage users to frequently use the "Export All Data" feature under Settings to keep manual offline backups.</p>
+                
+                <h4 style="font-size: 1rem; font-weight: 700; margin-top: 16px; margin-bottom: 8px; color: var(--text-primary);">3. Disclaimer of Warranties</h4>
+                <p style="margin-bottom: 16px;">InvoiceFlow is provided "as is" and "as available" without warranties of any kind, either express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement. We are not liable for any financial errors, lost data, or legal issues resulting from the use of our generator.</p>
+                
+                <h4 style="font-size: 1rem; font-weight: 700; margin-top: 16px; margin-bottom: 8px; color: var(--text-primary);">4. Governing Law</h4>
+                <p style="margin-bottom: 8px;">These terms shall be governed by and interpreted in accordance with standard internet usage guidelines and local commerce regulations.</p>
+            </div>
+            <div class="modal-footer" style="margin-top: 20px; padding-top: 16px;">
+                <button type="button" class="btn btn-primary" id="terms-modal-ok">I Accept</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GDPR Cookie Consent Banner (Bug 7) -->
+    <div class="cookie-banner" id="cookie-consent-banner" style="display: none;">
+        <div class="cookie-content">
+            <p>We use cookies to serve personalized ads and analyze traffic via Google AdSense. Read our <a href="javascript:void(0)" id="cookie-privacy-link">Privacy Policy</a> to learn more.</p>
+        </div>
+        <div class="cookie-actions">
+            <button class="btn btn-secondary btn-sm" id="cookie-reject-btn" style="height: 36px; padding: 0 16px;">Reject</button>
+            <button class="btn btn-primary btn-sm" id="cookie-accept-btn" style="height: 36px; padding: 0 16px;">Accept</button>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div class="toast-container" id="toast-container"></div>
 
@@ -844,10 +1189,15 @@
     <script src="https://cdn.jsdelivr.net/npm/dexie@4.0.11/dist/dexie.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.min.js"></script>
+    <!-- Firebase SDK (Compat libraries for standard global namespace) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <!-- Data Layer -->
     <script src="js/db.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/sync.js"></script>
     <script src="js/invoices.js"></script>
     <script src="js/customers.js"></script>
     <script src="js/company.js"></script>

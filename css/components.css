@@ -936,3 +936,82 @@
   display: none;
 }
 
+/* ═══════════════════════════════════════════
+   FORM VALIDATION ERRORS (Bug 5)
+   ═══════════════════════════════════════════ */
+
+.input-error {
+  border-color: var(--accent-danger) !important;
+  box-shadow: 0 0 0 3px var(--accent-danger-light) !important;
+}
+
+.error-msg {
+  color: var(--accent-danger);
+  font-size: 0.75rem;
+  margin-top: 4px;
+  display: block;
+  font-weight: 500;
+  animation: fadeIn 200ms ease;
+}
+
+/* ═══════════════════════════════════════════
+   GDPR COOKIE CONSENT BANNER (Bug 7)
+   ═══════════════════════════════════════════ */
+
+.cookie-banner {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  right: 24px;
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 18px 24px;
+  box-shadow: var(--shadow-xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  z-index: 9999;
+  box-sizing: border-box;
+  animation: slideUp 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cookie-content {
+  flex: 1;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.cookie-content a {
+  color: var(--accent-primary);
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.cookie-actions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .cookie-banner {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 20px;
+  }
+  
+  .cookie-actions {
+    justify-content: flex-end;
+  }
+}
+

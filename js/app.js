@@ -31,6 +31,77 @@
         // Set up global events
         setupGlobalEvents();
 
+        // Set up landing page
+        setupLandingPage();
+
+        // Set up GDPR cookie banner
+        setupGDPRCookieBanner();
+
+        // Restore Firebase session if active
+        if (window.Sync && Sync.isEnabled() && typeof Auth !== 'undefined') {
+            try {
+                const client = Sync.getClient();
+                if (client) {
+                    client.auth().onAuthStateChanged(async (firebaseUser) => {
+                        if (firebaseUser) {
+                            let existingUser = await db.users.where('email').equals(firebaseUser.email.toLowerCase()).first();
+                            let localUserId;
+                            if (existingUser) {
+                                existingUser.supabaseId = firebaseUser.uid;
+                                if (firebaseUser.displayName) {
+                                    existingUser.name = firebaseUser.displayName;
+                                }
+                                await db.users.put(existingUser);
+                                localUserId = existingUser.id;
+                            } else {
+                                localUserId = await db.users.add({
+                                    name: firebaseUser.displayName || 'Cloud User',
+                                    email: firebaseUser.email.toLowerCase(),
+                                    supabaseId: firebaseUser.uid,
+                                    createdAt: new Date().toISOString()
+                                });
+                            }
+                            var sessionObj = {
+                                id: localUserId,
+                                name: firebaseUser.displayName || (existingUser ? existingUser.name : 'Cloud User'),
+                                email: firebaseUser.email.toLowerCase(),
+                                supabaseId: firebaseUser.uid
+                            };
+                            
+                            const currentUser = Auth.getCurrentUser();
+                            if (!currentUser || currentUser.email !== sessionObj.email) {
+                                sessionStorage.setItem('currentUser', JSON.stringify(sessionObj));
+                                try {
+                                    await Sync.pull(localUserId);
+                                    Router.navigate(window.location.hash);
+                                } catch (syncErr) {
+                                    console.error('Initial sync pull on auto-restore failed:', syncErr);
+                                }
+                            }
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to auto-restore Firebase session:', err);
+            }
+        }
+
+        // Pull latest sync data when window/tab gets focus (keeps Device A & Device B in sync)
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible' && window.Sync && Sync.isEnabled() && typeof Auth !== 'undefined') {
+                const user = Auth.getCurrentUser();
+                if (user) {
+                    try {
+                        await Sync.pull(user.id);
+                        // Refresh the current page to display new data
+                        Router.navigate(window.location.hash);
+                    } catch (syncErr) {
+                        console.error('Focus sync pull failed:', syncErr);
+                    }
+                }
+            }
+        });
+
         // Initialize router
         Router.init();
     }
@@ -60,6 +131,12 @@
     // ─── Login Form ───────────────────────────────────
     function setupLoginForm() {
         const form = document.getElementById('login-form');
+        const emailInput = document.getElementById('login-email');
+        if (emailInput) {
+            emailInput.addEventListener('input', () => {
+                emailInput.value = emailInput.value.toLowerCase();
+            });
+        }
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('login-email').value.trim();
@@ -85,6 +162,12 @@
     // ─── Register Form ────────────────────────────────
     function setupRegisterForm() {
         const form = document.getElementById('register-form');
+        const emailInput = document.getElementById('register-email');
+        if (emailInput) {
+            emailInput.addEventListener('input', () => {
+                emailInput.value = emailInput.value.toLowerCase();
+            });
+        }
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('register-name').value.trim();
@@ -102,16 +185,120 @@
             btn.innerHTML = '<span class="spinner"></span> Creating account...';
 
             try {
-                await Auth.register(name, email, password);
-                UI.showToast('Account created successfully!', 'success');
-                form.reset();
-                window.location.hash = '#/dashboard';
+                const res = await Auth.register(name, email, password);
+                if (res && res.emailVerificationRequired) {
+                    UI.showToast('Account registered! Please check your email to verify your account before logging in.', 'warning', 10000);
+                    form.reset();
+                    // Switch tab to login
+                    const loginTab = document.querySelector('.auth-tab[data-tab="login"]');
+                    if (loginTab) loginTab.click();
+                    const loginEmail = document.getElementById('login-email');
+                    if (loginEmail) loginEmail.value = res.email;
+                } else {
+                    UI.showToast('Account created successfully!', 'success');
+                    form.reset();
+                    window.location.hash = '#/dashboard';
+                }
             } catch (err) {
                 UI.showToast(err.message, 'error');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<span>Create Account</span><span>→</span>';
             }
+        });
+    }
+
+    // ─── Landing Page Events ───────────────────────────
+    function setupLandingPage() {
+        // FAQ Accordion Toggle
+        const faqCards = document.querySelectorAll('.faq-card');
+        faqCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const isActive = card.classList.contains('active');
+                faqCards.forEach(c => c.classList.remove('active'));
+                if (!isActive) {
+                    card.classList.add('active');
+                }
+            });
+        });
+
+        // Landing Page Legal Modal Event Listeners
+        const privacyModal = document.getElementById('privacy-modal-overlay');
+        const termsModal = document.getElementById('terms-modal-overlay');
+
+        // Landing Privacy Link
+        document.getElementById('landing-privacy-link')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            privacyModal.classList.add('active');
+        });
+
+        // Landing Terms Link
+        document.getElementById('landing-terms-link')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            termsModal.classList.add('active');
+        });
+
+        // Terms Close Button
+        document.getElementById('terms-modal-close')?.addEventListener('click', () => {
+            termsModal.classList.remove('active');
+        });
+
+        // Terms OK Button
+        document.getElementById('terms-modal-ok')?.addEventListener('click', () => {
+            termsModal.classList.remove('active');
+        });
+
+        // Close Terms Modal on Overlay Click
+        termsModal?.addEventListener('click', (e) => {
+            if (e.target === termsModal) {
+                termsModal.classList.remove('active');
+            }
+        });
+
+        // Contact Form Submission
+        const contactForm = document.getElementById('landing-contact-form');
+        contactForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('contact-name').value.trim();
+            const email = document.getElementById('contact-email').value.trim();
+            const message = document.getElementById('contact-message').value.trim();
+            const submitBtn = document.getElementById('contact-submit-btn');
+
+            if (!name || !email || !message) {
+                UI.showToast('Please fill in all contact fields.', 'error');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending Message...';
+
+            const formData = new FormData(contactForm);
+            fetch('/', {
+                method: 'POST',
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams(formData).toString()
+            })
+            .then(response => {
+                if (response.ok) {
+                    UI.showToast(`Thank you, ${name}! Your message has been sent successfully.`, 'success');
+                    contactForm.reset();
+                } else {
+                    throw new Error('Server returned an error');
+                }
+            })
+            .catch(err => {
+                console.error('Netlify form submission error:', err);
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '') {
+                    UI.showToast(`[Local Developer Mock] Thank you, ${name}! Your message has been sent successfully.`, 'success');
+                    contactForm.reset();
+                } else {
+                    UI.showToast('Failed to send message. Please try again.', 'error');
+                }
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Message';
+            });
         });
     }
 
@@ -135,10 +322,10 @@
         });
 
         // Logout
-        document.getElementById('logout-btn').addEventListener('click', (e) => {
+        document.getElementById('logout-btn').addEventListener('click', async (e) => {
             e.preventDefault();
-            Auth.logout();
-            window.location.hash = '#/login';
+            await Auth.logout();
+            window.location.hash = '#/landing';
             UI.showToast('Signed out successfully', 'info');
             closeDropdown();
         });
@@ -208,10 +395,33 @@
         });
 
         // Settings logout
-        document.getElementById('settings-logout-btn')?.addEventListener('click', () => {
-            Auth.logout();
-            window.location.hash = '#/login';
+        document.getElementById('settings-logout-btn')?.addEventListener('click', async () => {
+            await Auth.logout();
+            window.location.hash = '#/landing';
             UI.showToast('Signed out', 'info');
+        });
+
+        // Settings delete account
+        document.getElementById('delete-account-btn')?.addEventListener('click', () => {
+            UI.confirmDialog('Are you sure you want to permanently delete your account? All your local invoices, customer details, and cloud sync records will be deleted forever. This cannot be undone.', async () => {
+                try {
+                    const btn = document.getElementById('delete-account-btn');
+                    const originalHtml = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = 'Deleting...';
+                    
+                    await Auth.deleteAccount();
+                    window.location.hash = '#/landing';
+                    UI.showToast('Your account and all data have been permanently deleted.', 'warning');
+                } catch (err) {
+                    UI.showToast(err.message, 'error');
+                    const btn = document.getElementById('delete-account-btn');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<span>⚠️</span><span>Delete Account</span>';
+                    }
+                }
+            });
         });
 
         // Invoice form events
@@ -259,6 +469,9 @@
 
         // Invoice form template selector
         setupTemplateSelector('inv-template-selector');
+
+        // Firebase sync form
+        setupFirebaseSyncForm();
     }
 
     // ─── Invoice Form ─────────────────────────────────
@@ -289,10 +502,37 @@
             recalculateTotals();
         });
 
-        // Tax & discount recalculation
-        document.getElementById('inv-tax-rate').addEventListener('input', recalculateTotals);
-        document.getElementById('inv-discount-value').addEventListener('input', recalculateTotals);
-        document.getElementById('inv-discount-type').addEventListener('change', recalculateTotals);
+        // Tax & discount recalculation with capping (Bug 6)
+        document.getElementById('inv-tax-rate').addEventListener('input', (e) => {
+            let val = parseFloat(e.target.value);
+            if (!isNaN(val)) {
+                if (val < 0) e.target.value = 0;
+                if (val > 100) e.target.value = 100;
+            }
+            recalculateTotals();
+        });
+
+        const capDiscountValue = () => {
+            const valInput = document.getElementById('inv-discount-value');
+            let val = parseFloat(valInput.value);
+            if (!isNaN(val)) {
+                if (val < 0) valInput.value = 0;
+                const discountType = document.getElementById('inv-discount-type').value;
+                if (discountType === 'percentage' && val > 100) {
+                    valInput.value = 100;
+                }
+            }
+        };
+
+        document.getElementById('inv-discount-value').addEventListener('input', () => {
+            capDiscountValue();
+            recalculateTotals();
+        });
+
+        document.getElementById('inv-discount-type').addEventListener('change', () => {
+            capDiscountValue();
+            recalculateTotals();
+        });
 
         // Customer selection
         document.getElementById('inv-customer').addEventListener('change', async () => {
@@ -412,26 +652,45 @@
         const user = Auth.getCurrentUser();
         if (!user) return;
 
-        const customerId = parseInt(document.getElementById('inv-customer').value);
+        // Clear previous validation errors (Bug 5)
+        document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+        document.querySelectorAll('.error-msg').forEach(el => el.remove());
+
+        const showInlineError = (element, message) => {
+            element.classList.add('input-error');
+            const errDiv = document.createElement('span');
+            errDiv.className = 'error-msg';
+            errDiv.textContent = message;
+            element.parentNode.appendChild(errDiv);
+        };
+
+        let hasErrors = false;
+
+        const customerSelect = document.getElementById('inv-customer');
+        const customerId = parseInt(customerSelect.value);
         if (!customerId) {
-            UI.showToast('Please select a customer', 'error');
-            return;
+            showInlineError(customerSelect, 'Please select a customer');
+            hasErrors = true;
         }
 
         const rows = document.querySelectorAll('.item-row');
         if (rows.length === 0) {
-            UI.showToast('Please add at least one item', 'error');
-            return;
+            const addItemBtn = document.getElementById('add-item-btn');
+            showInlineError(addItemBtn, 'Please add at least one item');
+            hasErrors = true;
         }
 
-        // Collect items
+        // Collect and validate items
         const items = [];
-        let valid = true;
         rows.forEach(row => {
-            const desc = row.querySelector('.item-desc').value.trim();
+            const descInput = row.querySelector('.item-desc');
+            const desc = descInput.value.trim();
             const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
             const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
-            if (!desc) { valid = false; }
+            if (!desc) {
+                showInlineError(descInput, 'Description is required');
+                hasErrors = true;
+            }
             items.push({
                 description: desc,
                 quantity: qty,
@@ -440,8 +699,8 @@
             });
         });
 
-        if (!valid) {
-            UI.showToast('Please fill in all item descriptions', 'error');
+        if (hasErrors) {
+            UI.showToast('Please correct the highlighted errors', 'error');
             return;
         }
 
@@ -500,7 +759,64 @@
                 UI.showToast('Invoice created!', 'success');
                 currentEditInvoiceId = newId;
             }
-            window.location.hash = '#/invoices';
+            if (window.Sync && Sync.isEnabled()) {
+                Sync.push(user.id);
+            }
+
+            if (btnType === 'pending') {
+                const targetInvoiceId = currentEditInvoiceId;
+                const modalHtml = `
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
+                        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 8px;">Your invoice has been saved successfully! How would you like to share it?</p>
+                        <button class="btn btn-secondary share-opt-btn" data-share="email" style="width: 100%; justify-content: flex-start; gap: 12px; height: 44px; padding: 0 16px;">
+                            <span>📧</span> Send via Gmail / Email
+                        </button>
+                        <button class="btn btn-secondary share-opt-btn" data-share="whatsapp" style="width: 100%; justify-content: flex-start; gap: 12px; height: 44px; padding: 0 16px;">
+                            <span>💬</span> Send via WhatsApp
+                        </button>
+                        <button class="btn btn-secondary share-opt-btn" data-share="share" style="width: 100%; justify-content: flex-start; gap: 12px; height: 44px; padding: 0 16px;">
+                            <span>🔗</span> Share Document Link / File
+                        </button>
+                        <button class="btn btn-primary share-opt-btn" data-share="download" style="width: 100%; justify-content: flex-start; gap: 12px; height: 44px; padding: 0 16px;">
+                            <span>⬇️</span> Download PDF Copy
+                        </button>
+                    </div>
+                `;
+
+                const shareModal = UI.showModal({
+                    title: 'Send Invoice',
+                    content: modalHtml,
+                    footer: '<button class="btn btn-secondary close-modal-btn">Done</button>'
+                });
+
+                shareModal.overlay.querySelectorAll('.share-opt-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const action = btn.dataset.share;
+                        shareModal.close();
+                        try {
+                            if (action === 'download') {
+                                const invoice = await Invoices.get(targetInvoiceId);
+                                const company = await Company.get(user.id);
+                                const template = invoice.template || 'classic';
+                                PDF.download(invoice, company, template);
+                                UI.showToast('PDF downloading...', 'success');
+                            } else {
+                                await shareInvoiceHelper(targetInvoiceId, action);
+                            }
+                        } catch (err) {
+                            UI.showToast('Sharing failed: ' + err.message, 'error');
+                        }
+                        window.location.hash = '#/invoices';
+                    });
+                });
+
+                shareModal.overlay.querySelector('.close-modal-btn')?.addEventListener('click', () => {
+                    shareModal.close();
+                    window.location.hash = '#/invoices';
+                });
+            } else {
+                window.location.hash = '#/invoices';
+            }
         } catch (err) {
             UI.showToast('Error saving invoice: ' + err.message, 'error');
         }
@@ -549,6 +865,9 @@
                     if (customerModalCallback) {
                         customerModalCallback(newId);
                     }
+                }
+                if (window.Sync && Sync.isEnabled()) {
+                    Sync.push(user.id);
                 }
                 closeCustomerModal();
                 // Refresh current page
@@ -694,16 +1013,132 @@
                 zip: document.getElementById('company-zip').value.trim(),
                 country: document.getElementById('company-country').value.trim(),
                 taxId: document.getElementById('company-tax-id').value.trim(),
+                defaultCurrency: document.getElementById('company-default-currency').value,
                 logo: logoPreview.src && logoPreview.style.display !== 'none' ? logoPreview.src : null
             };
 
             try {
                 await Company.save(user.id, data);
                 UI.showToast('Company profile saved!', 'success');
+                if (window.Sync && Sync.isEnabled()) {
+                    Sync.push(user.id);
+                }
             } catch (err) {
                 UI.showToast(err.message, 'error');
             }
         });
+    }
+
+    // ─── Firebase Sync Form ───────────────────────────
+    function setupFirebaseSyncForm() {
+        const form = document.getElementById('firebase-sync-form');
+        const checkbox = document.getElementById('firebase-enabled');
+
+        if (!form || !checkbox) return;
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const enabled = checkbox.checked;
+            const apiKey = document.getElementById('firebase-api-key').value.trim();
+            const authDomain = document.getElementById('firebase-auth-domain').value.trim();
+            const projectId = document.getElementById('firebase-project-id').value.trim();
+            const storageBucket = document.getElementById('firebase-storage-bucket').value.trim();
+            const messagingSenderId = document.getElementById('firebase-messaging-sender-id').value.trim();
+            const appId = document.getElementById('firebase-app-id').value.trim();
+
+            localStorage.setItem('firebase_enabled', enabled);
+            localStorage.setItem('firebase_api_key', apiKey);
+            localStorage.setItem('firebase_auth_domain', authDomain);
+            localStorage.setItem('firebase_project_id', projectId);
+            localStorage.setItem('firebase_storage_bucket', storageBucket);
+            localStorage.setItem('firebase_messaging_sender_id', messagingSenderId);
+            localStorage.setItem('firebase_app_id', appId);
+
+            // Reset client so it re-initializes on next call
+            Sync.resetClient();
+
+            if (enabled) {
+                const someFilled = apiKey || authDomain || projectId || storageBucket || messagingSenderId || appId;
+                const allFilled = apiKey && authDomain && projectId && storageBucket && messagingSenderId && appId;
+
+                if (someFilled && !allFilled) {
+                    UI.showToast('Please fill out all 6 fields or leave them all blank to use the default config', 'error');
+                    Sync.updateSyncStatusBadge('Credentials needed');
+                    return;
+                }
+
+                if (Sync.isEnabled()) {
+                    UI.showToast('Firebase settings saved and connected!', 'success');
+                    Sync.updateSyncStatusBadge('Connected');
+
+                    const user = Auth.getCurrentUser();
+                    if (user) {
+                        try {
+                            await Sync.pull(user.id);
+                            UI.showToast('Initial sync pull completed successfully!', 'success');
+                            Router.navigate(window.location.hash);
+                        } catch (err) {
+                            UI.showToast('Initial sync pull failed: ' + err.message, 'error');
+                        }
+                    }
+                } else {
+                    UI.showToast('Settings saved, but Firebase client initialization failed', 'error');
+                    Sync.updateSyncStatusBadge('Error');
+                }
+            } else {
+                UI.showToast('Cloud sync disabled', 'info');
+                Sync.updateSyncStatusBadge('Disconnected');
+            }
+        });
+    }
+
+    // ─── GDPR Cookie Consent (Bug 7) ───────────────────
+    function setupGDPRCookieBanner() {
+        const banner = document.getElementById('cookie-consent-banner');
+        const acceptBtn = document.getElementById('cookie-accept-btn');
+        const rejectBtn = document.getElementById('cookie-reject-btn');
+        const privacyLink = document.getElementById('cookie-privacy-link');
+
+        if (!banner || !acceptBtn || !rejectBtn) return;
+
+        privacyLink?.addEventListener('click', (e) => {
+            e.preventDefault();
+            const privacyModal = document.getElementById('privacy-modal-overlay');
+            if (privacyModal) privacyModal.classList.add('active');
+        });
+
+        const consent = localStorage.getItem('cookie-consent');
+
+        if (!consent) {
+            banner.style.display = 'flex';
+        } else if (consent === 'accepted') {
+            loadGoogleAds();
+        }
+
+        acceptBtn.addEventListener('click', () => {
+            localStorage.setItem('cookie-consent', 'accepted');
+            banner.style.display = 'none';
+            loadGoogleAds();
+            UI.showToast('Cookie settings updated. Thank you!', 'success');
+        });
+
+        rejectBtn.addEventListener('click', () => {
+            localStorage.setItem('cookie-consent', 'rejected');
+            banner.style.display = 'none';
+            UI.showToast('Optional cookies rejected. Personalized ads disabled.', 'info');
+        });
+    }
+
+    function loadGoogleAds() {
+        if (window.adsenseLoaded) return;
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3114500520120157";
+        script.crossOrigin = "anonymous";
+        document.head.appendChild(script);
+        window.adsenseLoaded = true;
+        console.log('Google AdSense script loaded dynamically after user consent.');
     }
 
     // ─── Data Management ──────────────────────────────
@@ -818,6 +1253,9 @@
                     }
 
                     UI.showToast('All data cleared', 'info');
+                    if (window.Sync && Sync.isEnabled()) {
+                        Sync.push(user.id);
+                    }
                     Router.navigate(window.location.hash);
                 } catch (err) {
                     UI.showToast('Error: ' + err.message, 'error');
@@ -883,10 +1321,7 @@
         });
     }
 
-    async function shareInvoice(method) {
-        const id = Router.getParam('id');
-        if (!id) return;
-
+    async function shareInvoiceHelper(id, method) {
         try {
             const invoice = await Invoices.get(parseInt(id));
             if (!invoice) {
@@ -901,22 +1336,6 @@
             const formattedTotal = UI.formatCurrency(invoice.total, invoice.currency);
             
             const subject = `Invoice ${invoice.invoiceNumber} from ${companyName}`;
-
-            function openComposer(downloadUrl) {
-                var linkText = downloadUrl ? `\n\nDownload PDF: ${downloadUrl}` : '';
-                var linkTextWA = downloadUrl ? `\n\n*Download PDF:* ${downloadUrl}` : '';
-
-                if (method === 'email') {
-                    var emailBody = `Hello ${customer.name || 'there'},\n\nHere is Invoice ${invoice.invoiceNumber} from ${companyName}.\n\nTotal Due: ${formattedTotal}\nDue Date: ${UI.formatDate(invoice.dueDate)}${linkText}\n\nThank you for your business!\n\nBest regards,\n${companyName}`;
-                    var gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(customer.email || '')}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
-                    window.open(gmailUrl, '_blank');
-                } else if (method === 'whatsapp') {
-                    var cleanPhone = (customer.phone || '').replace(/[^\d+]/g, '');
-                    var waText = `Hello *${customer.name || 'there'}*,\n\nHere is *Invoice ${invoice.invoiceNumber}* from *${companyName}*.\n\n*Total Due:* ${formattedTotal}\n*Due Date:* ${UI.formatDate(invoice.dueDate)}${linkTextWA}\n\nThank you for your business!`;
-                    var waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waText)}`;
-                    window.open(waUrl, '_blank');
-                }
-            }
 
             if (method === 'share') {
                 if (navigator.share && navigator.canShare) {
@@ -948,48 +1367,46 @@
                         }
                     });
                 } else {
-                    UI.showToast('Web Share is not supported in this browser. Please download the PDF and share it manually.', 'warning');
+                    // Fallback to downloading (Bug 11)
+                    try {
+                        const activeTemplate = document.querySelector('#preview-template-selector .template-option.active');
+                        const template = activeTemplate ? activeTemplate.getAttribute('data-template') : invoice.template || 'classic';
+                        PDF.download(invoice, company, template);
+                        UI.showToast('Web Share not supported. PDF downloaded automatically! 📎', 'success');
+                    } catch (e) {
+                        UI.showToast('Web Share is not supported and download failed: ' + e.message, 'warning');
+                    }
                 }
             } else {
-                // Email or WhatsApp: Generate temporary download link
-                const activeTemplate = document.querySelector('#preview-template-selector .template-option.active');
-                const template = activeTemplate ? activeTemplate.getAttribute('data-template') : invoice.template || 'classic';
-                const docDef = PDF.generateDocDefinition(invoice, company, template);
+                // Auto-download PDF in background so user has the actual document file ready to attach (User Request)
+                try {
+                    const template = invoice.template || 'classic';
+                    PDF.download(invoice, company, template);
+                    UI.showToast('Invoice PDF downloaded automatically! Attach it to your message 📎', 'success');
+                } catch (pdfErr) {
+                    console.error('PDF auto-download during share failed:', pdfErr);
+                }
 
-                UI.showToast('Generating secure PDF download link...', 'info');
-                
-                pdfMake.createPdf(docDef).getBlob(function (blob) {
-                    var formData = new FormData();
-                    formData.append('file', blob, `Invoice_${invoice.invoiceNumber || 'invoice'}.pdf`);
-
-                    fetch('https://tmpfiles.org/api/v1/upload', {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(res => {
-                        if (!res.ok) throw new Error('Upload server returned error');
-                        return res.json();
-                    })
-                    .then(data => {
-                        if (data.status === 'success' && data.data && data.data.url) {
-                            var viewUrl = data.data.url;
-                            var downloadUrl = viewUrl.replace('https://tmpfiles.org/', 'https://tmpfiles.org/dl/');
-                            UI.showToast('Link generated successfully!', 'success');
-                            openComposer(downloadUrl);
-                        } else {
-                            throw new Error('Invalid server response');
-                        }
-                    })
-                    .catch(uploadErr => {
-                        console.warn('PDF upload failed, falling back to text-only message:', uploadErr);
-                        UI.showToast('Could not generate PDF link. Opening message without link.', 'warning');
-                        openComposer(null);
-                    });
-                });
+                if (method === 'email') {
+                    var emailBody = `Hello ${customer.name || 'there'},\n\nHere is Invoice ${invoice.invoiceNumber} from ${companyName}.\n\nTotal Due: ${formattedTotal}\nDue Date: ${UI.formatDate(invoice.dueDate)}\n\nThank you for your business!\n\nBest regards,\n${companyName}`;
+                    var gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(customer.email || '')}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+                    window.open(gmailUrl, '_blank');
+                } else if (method === 'whatsapp') {
+                    var cleanPhone = (customer.phone || '').replace(/[^\d+]/g, '');
+                    var waText = `Hello *${customer.name || 'there'}*,\n\nHere is *Invoice ${invoice.invoiceNumber}* from *${companyName}*.\n\n*Total Due:* ${formattedTotal}\n*Due Date:* ${UI.formatDate(invoice.dueDate)}\n\nThank you for your business!`;
+                    var waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waText)}`;
+                    window.open(waUrl, '_blank');
+                }
             }
         } catch (err) {
             UI.showToast('Failed to share: ' + err.message, 'error');
         }
+    }
+
+    async function shareInvoice(method) {
+        const id = Router.getParam('id');
+        if (!id) return;
+        await shareInvoiceHelper(parseInt(id), method);
     }
 
     function setupTemplateSelector(containerId, onChange) {
@@ -1015,6 +1432,7 @@
         if (!user) return;
 
         document.getElementById('auth-page').style.display = 'none';
+        document.getElementById('landing-page').style.display = 'none';
         document.getElementById('app-shell').style.display = '';
 
         // Update user info in sidebar and header
@@ -1029,6 +1447,33 @@
     window.showAuthPage = function () {
         document.getElementById('auth-page').style.display = '';
         document.getElementById('app-shell').style.display = 'none';
+        document.getElementById('landing-page').style.display = 'none';
+    };
+
+    window.showLandingPage = function () {
+        document.getElementById('landing-page').style.display = '';
+        document.getElementById('auth-page').style.display = 'none';
+        document.getElementById('app-shell').style.display = 'none';
+
+        // Dynamically toggle landing buttons based on authentication state
+        const isLoggedIn = Auth.isLoggedIn();
+        const signinBtn = document.getElementById('landing-signin-btn');
+        const signupBtn = document.getElementById('landing-signup-btn');
+        const heroPrimaryBtn = document.getElementById('landing-hero-primary-btn');
+
+        if (isLoggedIn) {
+            signinBtn.textContent = 'Dashboard';
+            signinBtn.href = '#/dashboard';
+            signupBtn.style.display = 'none';
+            heroPrimaryBtn.textContent = 'Go to Dashboard';
+            heroPrimaryBtn.href = '#/dashboard';
+        } else {
+            signinBtn.textContent = 'Sign In';
+            signinBtn.href = '#/login';
+            signupBtn.style.display = '';
+            heroPrimaryBtn.textContent = 'Start Generating Free';
+            heroPrimaryBtn.href = '#/login?tab=register';
+        }
     };
 
     // ─── Dashboard ────────────────────────────────────
@@ -1124,8 +1569,12 @@
                     e.stopPropagation();
                     UI.confirmDialog('Delete this invoice? This cannot be undone.', async () => {
                         try {
+                            const user = Auth.getCurrentUser();
                             await Invoices.delete(parseInt(btn.dataset.id));
                             UI.showToast('Invoice deleted', 'info');
+                            if (window.Sync && Sync.isEnabled() && user) {
+                                Sync.push(user.id);
+                            }
                             await renderInvoicesList();
                         } catch (err) {
                             UI.showToast(err.message, 'error');
@@ -1349,8 +1798,12 @@
                     e.stopPropagation();
                     UI.confirmDialog('Delete this customer?', async () => {
                         try {
+                            const user = Auth.getCurrentUser();
                             await Customers.delete(parseInt(btn.dataset.id));
                             UI.showToast('Customer deleted', 'info');
+                            if (window.Sync && Sync.isEnabled() && user) {
+                                Sync.push(user.id);
+                            }
                             await renderCustomersList();
                         } catch (err) {
                             UI.showToast(err.message, 'error');
@@ -1370,8 +1823,8 @@
         if (!user) return;
 
         // User info
-        document.getElementById('settings-user-name').textContent = user.name;
-        document.getElementById('settings-user-email').textContent = user.email;
+        document.getElementById('settings-user-name').textContent = user.name || 'Not set';
+        document.getElementById('settings-user-email').textContent = user.email || 'Not set';
 
         // Load company profile
         try {
@@ -1400,6 +1853,54 @@
             }
         } catch (err) {
             console.error('Error loading company profile:', err);
+        }
+
+        // Initialize Firebase Sync fields
+        const firebaseEnabledCheckbox = document.getElementById('firebase-enabled');
+        const firebaseApiKeyInput = document.getElementById('firebase-api-key');
+        const firebaseAuthDomainInput = document.getElementById('firebase-auth-domain');
+        const firebaseProjectIdInput = document.getElementById('firebase-project-id');
+        const firebaseStorageBucketInput = document.getElementById('firebase-storage-bucket');
+        const firebaseMessagingSenderIdInput = document.getElementById('firebase-messaging-sender-id');
+        const firebaseAppIdInput = document.getElementById('firebase-app-id');
+
+        if (firebaseEnabledCheckbox) {
+            const enabled = localStorage.getItem('firebase_enabled') !== 'false';
+            const apiKey = localStorage.getItem('firebase_api_key') || '';
+            const authDomain = localStorage.getItem('firebase_auth_domain') || '';
+            const projectId = localStorage.getItem('firebase_project_id') || '';
+            const storageBucket = localStorage.getItem('firebase_storage_bucket') || '';
+            const messagingSenderId = localStorage.getItem('firebase_messaging_sender_id') || '';
+            const appId = localStorage.getItem('firebase_app_id') || '';
+
+            firebaseEnabledCheckbox.checked = enabled;
+            if (firebaseApiKeyInput) firebaseApiKeyInput.value = apiKey;
+            if (firebaseAuthDomainInput) firebaseAuthDomainInput.value = authDomain;
+            if (firebaseProjectIdInput) firebaseProjectIdInput.value = projectId;
+            if (firebaseStorageBucketInput) firebaseStorageBucketInput.value = storageBucket;
+            if (firebaseMessagingSenderIdInput) firebaseMessagingSenderIdInput.value = messagingSenderId;
+            if (firebaseAppIdInput) firebaseAppIdInput.value = appId;
+
+            const formElement = firebaseEnabledCheckbox.closest('form');
+            if (formElement) {
+                const detailsElement = formElement.querySelector('details');
+                if (detailsElement) {
+                    detailsElement.open = !!(apiKey || authDomain || projectId || storageBucket || messagingSenderId || appId);
+                }
+            }
+
+            if (!enabled) {
+                Sync.updateSyncStatusBadge('Disconnected');
+            } else if (Sync.isEnabled()) {
+                Sync.updateSyncStatusBadge('Connected');
+            } else {
+                const someFilled = apiKey || authDomain || projectId || storageBucket || messagingSenderId || appId;
+                if (someFilled) {
+                    Sync.updateSyncStatusBadge('Credentials needed');
+                } else {
+                    Sync.updateSyncStatusBadge('Error');
+                }
+            }
         }
     };
 
