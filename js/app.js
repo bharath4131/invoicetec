@@ -9,6 +9,8 @@
     // ─── State ────────────────────────────────────────
     let currentEditInvoiceId = null;
     let selectedTemplate = 'classic';
+    let html5QrcodeScanner = null;
+    let suggestionsQrcodeScanner = null;
 
     // ─── Initialize App ───────────────────────────────
     async function init() {
@@ -494,6 +496,9 @@
 
         // EmailJS settings form
         setupEmailJsForm();
+
+        // Settings tabs
+        setupSettingsTabs();
     }
 
     // ─── Invoice Form ─────────────────────────────────
@@ -1007,6 +1012,22 @@
             if (e.target === overlay) closeProductModal();
         });
 
+        // Barcode scanning hooks
+        const scanBtn = document.getElementById('product-scan-barcode-btn');
+        const stopScanBtn = document.getElementById('product-stop-scan-btn');
+        const readerContainer = document.getElementById('barcode-reader-container');
+
+        if (scanBtn && stopScanBtn && readerContainer) {
+            scanBtn.addEventListener('click', () => {
+                readerContainer.style.display = 'block';
+                startBarcodeScanner();
+            });
+
+            stopScanBtn.addEventListener('click', () => {
+                stopBarcodeScanner();
+            });
+        }
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const user = Auth.getCurrentUser();
@@ -1070,6 +1091,19 @@
     function closeProductModal() {
         document.getElementById('product-modal-overlay').classList.remove('active');
         productModalCallback = null;
+        
+        // Ensure scanner is stopped
+        const stopScanBtn = document.getElementById('product-stop-scan-btn');
+        if (stopScanBtn) {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then(() => {
+                    html5QrcodeScanner = null;
+                }).catch(() => {
+                    html5QrcodeScanner = null;
+                });
+            }
+            document.getElementById('barcode-reader-container').style.display = 'none';
+        }
     }
 
     // ─── Privacy Modal ────────────────────────────────
@@ -1633,6 +1667,10 @@
         const user = Auth.getCurrentUser();
         if (!user) return;
 
+        // Stop any running camera streams globally on page switch
+        if (typeof stopBarcodeScanner === 'function') stopBarcodeScanner();
+        if (typeof stopCatalogScanner === 'function') stopCatalogScanner();
+
         document.getElementById('auth-page').style.display = 'none';
         document.getElementById('landing-page').style.display = 'none';
         document.getElementById('app-shell').style.display = '';
@@ -2019,12 +2057,174 @@
     }
 
     // ─── Products ──────────────────────────────────────
+    const CURATED_SERVICE_PRESETS = [
+        { name: "Custom Website Development", price: 1200.00, description: "Responsive front-end & back-end development" },
+        { name: "IT Support & Maintenance", price: 75.00, description: "Hourly server, network, or desktop troubleshooting" },
+        { name: "App Development Package", price: 3500.00, description: "Complete cross-platform mobile app MVP" },
+        { name: "Logo & Branding Package", price: 600.00, description: "Includes logo variants, color palette, and style guide" },
+        { name: "Social Media Graphic Design", price: 45.00, description: "Custom designed posts for Instagram/LinkedIn" },
+        { name: "Video Editing (Hourly)", price: 90.00, description: "Post-production video editing and color grading" },
+        { name: "SEO Audit & Report", price: 450.00, description: "Complete website technical and content SEO analysis" },
+        { name: "Copywriting (Per Article)", price: 120.00, description: "Professional 1,500-word blog post or newsletter copy" },
+        { name: "Social Media Management", price: 800.00, description: "Monthly scheduling and creation of 10 posts" },
+        { name: "Hourly Business Consulting", price: 150.00, description: "General business advice and strategy sessions" },
+        { name: "Standard Shipping & Handling", price: 20.00, description: "Flat-rate domestic shipping fee" }
+    ];
+
+    let cachedRetailProducts = null;
+
     window.showProducts = async function () {
         showAppShell();
         document.getElementById('header-title').textContent = 'Products & Services';
         document.getElementById('product-search').value = '';
         await renderProductsList();
+        setupSuggestionsCatalog();
     };
+
+    async function fetchRetailProducts() {
+        if (cachedRetailProducts) return cachedRetailProducts;
+        
+        const response = await fetch('https://dummyjson.com/products?limit=24');
+        if (!response.ok) {
+            throw new Error('Failed to fetch from DummyJSON');
+        }
+        const data = await response.json();
+        cachedRetailProducts = (data.products || []).map(p => ({
+            name: p.title,
+            price: p.price,
+            description: p.description
+        }));
+        return cachedRetailProducts;
+    }
+
+    function setupSuggestionsCatalog() {
+        const filterButtons = document.querySelectorAll('.suggestion-filter-btn');
+        const scanSection = document.getElementById('suggestions-scanner-section');
+        const stopBtn = document.getElementById('suggestions-stop-scan-btn');
+
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Deactivate all buttons
+                filterButtons.forEach(b => {
+                    b.classList.remove('active');
+                    b.style.background = '';
+                    b.style.color = '';
+                });
+
+                // Activate clicked button
+                btn.classList.add('active');
+                btn.style.background = 'var(--accent-primary)';
+                btn.style.color = '#ffffff';
+
+                const category = btn.dataset.category;
+
+                // Stop active scanner if switching away from scan
+                if (category !== 'scan') {
+                    stopCatalogScanner();
+                }
+
+                if (category === 'scan') {
+                    scanSection.style.display = 'block';
+                    document.getElementById('products-suggestions-grid').innerHTML = '';
+                    startCatalogScanner();
+                } else {
+                    scanSection.style.display = 'none';
+                    renderProductSuggestions(category);
+                }
+            });
+        });
+
+        if (stopBtn) {
+            stopBtn.addEventListener('click', () => {
+                stopCatalogScanner();
+            });
+        }
+
+        // Set initial active button styling
+        const activeBtn = document.querySelector('.suggestion-filter-btn.active');
+        if (activeBtn) {
+            activeBtn.style.background = 'var(--accent-primary)';
+            activeBtn.style.color = '#ffffff';
+        }
+    }
+
+    async function renderProductSuggestions(category) {
+        const grid = document.getElementById('products-suggestions-grid');
+        const loader = document.getElementById('suggestions-loading-wrapper');
+        const errorDiv = document.getElementById('suggestions-error-message');
+        const user = Auth.getCurrentUser();
+
+        if (!grid || !user) return;
+
+        grid.innerHTML = '';
+        errorDiv.style.display = 'none';
+
+        let items = [];
+
+        if (category === 'presets') {
+            loader.style.display = 'none';
+            items = CURATED_SERVICE_PRESETS;
+        } else {
+            loader.style.display = 'block';
+            try {
+                items = await fetchRetailProducts();
+                loader.style.display = 'none';
+            } catch (err) {
+                console.error("Failed to load suggestions: ", err);
+                loader.style.display = 'none';
+                errorDiv.style.display = 'block';
+                return;
+            }
+        }
+
+        grid.innerHTML = items.map((item, idx) => `
+            <div class="card card-hover animate-fadeIn delay-${Math.min(idx + 1, 5)}" style="padding: 16px; border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; gap: 12px; background: var(--bg-secondary);">
+                <div>
+                    <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">${UI.escapeHtml(item.name)}</h4>
+                    <p style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        ${UI.escapeHtml(item.description || '')}
+                    </p>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border-color); padding-top: 10px;">
+                    <span class="mono" style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">${UI.formatCurrency(item.price, 'USD')}</span>
+                    <button class="btn btn-primary btn-sm quick-add-suggest-btn" style="padding: 4px 8px; font-size: 0.75rem;" data-idx="${idx}">+ Quick Add</button>
+                </div>
+            </div>
+        `).join('');
+
+        grid.querySelectorAll('.quick-add-suggest-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const index = parseInt(btn.dataset.idx);
+                const selected = items[index];
+                if (!selected) return;
+
+                const data = {
+                    userId: user.id,
+                    name: selected.name,
+                    price: selected.price,
+                    description: selected.description
+                };
+
+                try {
+                    btn.disabled = true;
+                    btn.textContent = 'Adding...';
+                    await Products.add(data);
+                    UI.showToast(`"${selected.name}" added to catalog!`, 'success');
+                    if (window.Sync && Sync.isEnabled()) {
+                        Sync.push(user.id);
+                    }
+                    await renderProductsList();
+                    btn.textContent = 'Added ✓';
+                    btn.style.background = '#10b981';
+                    btn.style.borderColor = '#10b981';
+                } catch (err) {
+                    UI.showToast(err.message, 'error');
+                    btn.disabled = false;
+                    btn.textContent = '+ Quick Add';
+                }
+            });
+        });
+    }
 
     async function renderProductsList() {
         const user = Auth.getCurrentUser();
@@ -2099,6 +2299,12 @@
     window.showSettings = async function () {
         showAppShell();
         document.getElementById('header-title').textContent = 'Settings';
+
+        // Reset Settings tabs to Profile
+        const activeTab = document.querySelector('.settings-tab-btn[data-target="settings-tab-profile"]');
+        if (activeTab) {
+            activeTab.click();
+        }
 
         const user = Auth.getCurrentUser();
         if (!user) return;
@@ -2193,6 +2399,421 @@
         if (emailjsServiceId) emailjsServiceId.value = localStorage.getItem('emailjs_service_id') || '';
         if (emailjsTemplateId) emailjsTemplateId.value = localStorage.getItem('emailjs_template_id') || '';
     };
+
+    // ─── Settings Tabs Controller ─────────────────────
+    function setupSettingsTabs() {
+        const tabs = document.querySelectorAll('.settings-tab-btn');
+        const panels = document.querySelectorAll('.settings-tab-panel');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Deactivate all tabs
+                tabs.forEach(t => t.classList.remove('active'));
+                // Activate clicked tab
+                tab.classList.add('active');
+
+                const target = tab.dataset.target;
+                // Hide all panels
+                panels.forEach(panel => {
+                    panel.style.display = 'none';
+                });
+
+                // Show target panel
+                const activePanel = document.getElementById(target);
+                if (activePanel) {
+                    if (target === 'settings-tab-account') {
+                        activePanel.style.display = 'flex';
+                    } else {
+                        activePanel.style.display = 'block';
+                    }
+                }
+            });
+        });
+    }
+
+    // ─── Catalog Barcode Scanner ──────────────────────
+    function startCatalogScanner() {
+        if (suggestionsQrcodeScanner) {
+            stopCatalogScanner();
+        }
+
+        if (typeof Html5Qrcode === 'undefined') {
+            UI.showToast("Scanner library loading. Please wait...", "warning");
+            return;
+        }
+
+        const container = document.getElementById('suggestions-scanner-container');
+        if (container) container.style.display = 'block';
+
+        suggestionsQrcodeScanner = new Html5Qrcode("suggestions-barcode-reader");
+
+        const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
+            stopCatalogScanner();
+            playBeep('success');
+
+            const loader = document.getElementById('suggestions-scan-loader');
+            const loaderText = document.getElementById('suggestions-scan-loader-text');
+            if (loader && loaderText) {
+                loader.style.display = 'block';
+                loaderText.textContent = `Looking up code: ${decodedText}...`;
+            }
+
+            try {
+                const product = await lookupProductByBarcode(decodedText);
+                if (product) {
+                    renderScannedProductResult(product);
+                } else {
+                    UI.showToast("No product details found for code: " + decodedText, "info");
+                }
+            } catch (err) {
+                console.error("Catalog scanner lookup error:", err);
+                UI.showToast("Failed to lookup barcode", "error");
+            } finally {
+                if (loader) loader.style.display = 'none';
+            }
+        };
+
+        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+
+        suggestionsQrcodeScanner.start(
+            { facingMode: "environment" },
+            config,
+            qrCodeSuccessCallback
+        ).catch(err => {
+            console.error("Catalog camera start failed: ", err);
+            UI.showToast("Failed to access camera: " + err.message, "error");
+            if (container) container.style.display = 'none';
+        });
+    }
+
+    function stopCatalogScanner() {
+        if (suggestionsQrcodeScanner) {
+            suggestionsQrcodeScanner.stop().then(() => {
+                suggestionsQrcodeScanner = null;
+                const container = document.getElementById('suggestions-scanner-container');
+                if (container) container.style.display = 'none';
+            }).catch(err => {
+                console.error("Failed to stop catalog scanner: ", err);
+                suggestionsQrcodeScanner = null;
+                const container = document.getElementById('suggestions-scanner-container');
+                if (container) container.style.display = 'none';
+            });
+        } else {
+            const container = document.getElementById('suggestions-scanner-container');
+            if (container) container.style.display = 'none';
+        }
+    }
+
+    function renderScannedProductResult(product) {
+        const grid = document.getElementById('products-suggestions-grid');
+        if (!grid) return;
+
+        grid.innerHTML = `
+            <div class="card scanned-product-card animate-fadeIn" style="grid-column: 1 / -1; padding: 24px; display: flex; flex-direction: column; gap: 16px; position: relative;">
+                <div>
+                    <h4 style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; max-width: 80%;">${UI.escapeHtml(product.name)}</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+                        ${UI.escapeHtml(product.description || 'No description available')}
+                    </p>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 8px; flex-wrap: wrap; gap: 16px;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <span style="font-size: 0.75rem; color: var(--text-tertiary);">Estimated Value</span>
+                        <span class="mono" style="font-size: 1.3rem; font-weight: 700; color: var(--accent-primary);">${UI.formatCurrency(product.price, 'USD')}</span>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn btn-secondary" id="btn-scan-again" style="padding: 8px 16px; font-size: 0.85rem;">
+                            📷 Scan Again
+                        </button>
+                        <button class="btn btn-primary" id="btn-add-scanned-to-catalog" style="padding: 8px 24px; font-size: 0.85rem; font-weight: 600;">
+                            + Add to Catalog
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Scan Again button listener
+        document.getElementById('btn-scan-again').addEventListener('click', () => {
+            grid.innerHTML = '';
+            startCatalogScanner();
+        });
+
+        // Add to Catalog button listener
+        document.getElementById('btn-add-scanned-to-catalog').addEventListener('click', async () => {
+            const user = Auth.getCurrentUser();
+            if (!user) return;
+
+            const btn = document.getElementById('btn-add-scanned-to-catalog');
+            const data = {
+                userId: user.id,
+                name: product.name,
+                price: product.price,
+                description: product.description
+            };
+
+            try {
+                btn.disabled = true;
+                btn.textContent = 'Adding...';
+                await Products.add(data);
+                UI.showToast(`"${product.name}" added to catalog!`, 'success');
+                if (window.Sync && Sync.isEnabled()) {
+                    Sync.push(user.id);
+                }
+                await renderProductsList();
+                btn.textContent = 'Added ✓';
+                btn.style.background = '#10b981';
+                btn.style.borderColor = '#10b981';
+            } catch (err) {
+                UI.showToast(err.message, 'error');
+                btn.disabled = false;
+                btn.textContent = '+ Add to Catalog';
+            }
+        });
+    }
+
+    // ─── Barcode Scanning Utilities ───────────────────
+    const MOCK_BARCODE_MAP = {
+        "12345678": {
+            name: "Custom Website Development",
+            price: 1200.00,
+            description: "Responsive front-end & back-end development with 3 months support."
+        },
+        "88888888": {
+            name: "Ergonomic Mesh Office Chair",
+            price: 249.99,
+            description: "Ergonomic mesh office chair with lumbar support, 3D armrests, and dynamic recline."
+        },
+        "9780132350884": {
+            name: "Clean Code (Book)",
+            price: 34.99,
+            description: "Clean Code: A Handbook of Agile Software Craftsmanship by Robert C. Martin."
+        },
+        "11111111": {
+            name: "IT Support & Maintenance",
+            price: 75.00,
+            description: "Hourly server, network, or desktop troubleshooting and updates."
+        },
+        "22222222": {
+            name: "Logo & Branding Package",
+            price: 600.00,
+            description: "Includes logo variants, color palette, brand guidelines, and social media banners."
+        },
+        "33333333": {
+            name: "SEO Audit & Report",
+            price: 450.00,
+            description: "Complete website technical SEO audit, keyword analysis, and content strategy recommendations."
+        }
+    };
+
+    function playBeep(type = 'success') {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            
+            if (type === 'success') {
+                const osc1 = ctx.createOscillator();
+                const osc2 = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(1200, ctx.currentTime);
+                
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(1800, ctx.currentTime);
+                
+                gain.gain.setValueAtTime(0.05, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+                
+                osc1.connect(gain);
+                osc2.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc1.start();
+                osc2.start();
+                osc1.stop(ctx.currentTime + 0.15);
+                osc2.stop(ctx.currentTime + 0.15);
+            } else {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(250, ctx.currentTime);
+                
+                gain.gain.setValueAtTime(0.05, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start();
+                osc.stop(ctx.currentTime + 0.3);
+            }
+        } catch (e) {
+            console.warn("Web Audio API not supported or blocked: ", e);
+        }
+    }
+
+    async function lookupProductByBarcode(barcode) {
+        barcode = barcode.trim();
+        if (!barcode) return null;
+
+        // 1. Try local mock database first
+        if (MOCK_BARCODE_MAP[barcode]) {
+            return {
+                ...MOCK_BARCODE_MAP[barcode],
+                description: `[Barcode: ${barcode}] ` + (MOCK_BARCODE_MAP[barcode].description || '')
+            };
+        }
+
+        // 2. Try Open Food Facts API (real grocery barcodes, EAN/UPC digits only)
+        if (/^\d{8,14}$/.test(barcode)) {
+            try {
+                const url = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,brands,generic_name,ingredients_text`;
+                const response = await fetch(url, {
+                    headers: {
+                        'User-Agent': 'InvoiceFlow - WebApp - Version 2.0 - https://invoicetec.vercel.app'
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 1 && data.product) {
+                        const p = data.product;
+                        const brandStr = p.brands ? `${p.brands} - ` : '';
+                        const name = brandStr + (p.product_name || p.generic_name || 'Scanned Grocery Item');
+                        const desc = p.generic_name || p.ingredients_text || 'Scanned food or grocery product';
+                        
+                        let digitsSum = 0;
+                        for (let i = 0; i < barcode.length; i++) {
+                            digitsSum += parseInt(barcode[i]) || 0;
+                        }
+                        const calculatedPrice = 1.99 + (digitsSum % 30) + 0.99;
+
+                        return {
+                            name: name,
+                            price: parseFloat(calculatedPrice.toFixed(2)),
+                            description: `[Barcode: ${barcode}] ${desc}`
+                        };
+                    }
+                }
+            } catch (err) {
+                console.error("Open Food Facts API error: ", err);
+            }
+        }
+
+        // 3. Fall back to DummyJSON Retail Products
+        try {
+            const retailProducts = await fetchRetailProducts();
+            if (retailProducts && retailProducts.length > 0) {
+                let hash = 0;
+                for (let i = 0; i < barcode.length; i++) {
+                    hash += barcode.charCodeAt(i);
+                }
+                const index = hash % retailProducts.length;
+                const match = retailProducts[index];
+                return {
+                    name: match.name,
+                    price: match.price,
+                    description: `[Barcode: ${barcode}] ` + (match.description || '')
+                };
+            }
+        } catch (err) {
+            console.error("DummyJSON fallback error: ", err);
+        }
+
+        // 4. Ultimate default fallback
+        return {
+            name: `Scanned Product (${barcode})`,
+            price: 10.00,
+            description: `[Barcode: ${barcode}] Scanned product item.`
+        };
+    }
+
+    function startBarcodeScanner() {
+        if (html5QrcodeScanner) {
+            stopBarcodeScanner();
+        }
+
+        if (typeof Html5Qrcode === 'undefined') {
+            UI.showToast("Scanner library loading. Please wait a moment...", "warning");
+            return;
+        }
+
+        const readerContainer = document.getElementById('barcode-reader-container');
+        if (readerContainer) readerContainer.style.display = 'block';
+
+        html5QrcodeScanner = new Html5Qrcode("barcode-reader");
+        
+        const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
+            stopBarcodeScanner();
+
+            const loader = document.getElementById('product-scan-loader');
+            if (loader) {
+                loader.style.display = 'block';
+                document.getElementById('product-scan-loader-text').textContent = `Looking up code: ${decodedText}...`;
+            }
+
+            try {
+                const product = await lookupProductByBarcode(decodedText);
+                if (product) {
+                    playBeep('success');
+                    const nameInput = document.getElementById('prod-name');
+                    const priceInput = document.getElementById('prod-price');
+                    const descInput = document.getElementById('prod-description');
+
+                    if (nameInput) nameInput.value = product.name;
+                    if (priceInput) priceInput.value = product.price;
+                    if (descInput) descInput.value = product.description;
+
+                    UI.showToast(`Found product: ${product.name}`, "success");
+                } else {
+                    playBeep('error');
+                    const nameInput = document.getElementById('prod-name');
+                    if (nameInput) nameInput.value = decodedText;
+                    UI.showToast(`Barcode scanned: ${decodedText} (No details found)`, "info");
+                }
+            } catch (err) {
+                console.error("Lookup error: ", err);
+                playBeep('error');
+                const nameInput = document.getElementById('prod-name');
+                if (nameInput) nameInput.value = decodedText;
+                UI.showToast("Lookup failed. Populated barcode value.", "warning");
+            } finally {
+                if (loader) loader.style.display = 'none';
+            }
+        };
+
+        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+
+        html5QrcodeScanner.start(
+            { facingMode: "environment" },
+            config,
+            qrCodeSuccessCallback
+        ).catch(err => {
+            console.error("Camera start failed: ", err);
+            UI.showToast("Failed to access camera: " + err.message, "error");
+            if (readerContainer) readerContainer.style.display = 'none';
+        });
+    }
+
+    function stopBarcodeScanner() {
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.stop().then(() => {
+                html5QrcodeScanner = null;
+                const readerContainer = document.getElementById('barcode-reader-container');
+                if (readerContainer) readerContainer.style.display = 'none';
+            }).catch(err => {
+                console.error("Failed to stop scanner: ", err);
+                html5QrcodeScanner = null;
+                const readerContainer = document.getElementById('barcode-reader-container');
+                if (readerContainer) readerContainer.style.display = 'none';
+            });
+        } else {
+            const readerContainer = document.getElementById('barcode-reader-container');
+            if (readerContainer) readerContainer.style.display = 'none';
+        }
+    }
 
     // ─── Helpers ──────────────────────────────────────
     async function populateCustomerDropdown() {

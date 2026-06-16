@@ -866,22 +866,92 @@
                         <button class="btn btn-primary" id="products-empty-add">
                             <span>+</span>
                             <span>Add Item</span>
-                        </button>
+                    </div>
+
+                    <!-- Quick Suggestions Section -->
+                    <div class="card" style="margin-top: 24px; padding: 24px;">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                            <span>💡</span> Catalog Quick Add Suggestions
+                        </h3>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 20px;">
+                            Click any item below to instantly save it to your reusable products & services catalog.
+                        </p>
+
+                        <!-- Suggestion Category Selector Toggles -->
+                        <div style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-secondary btn-sm active suggestion-filter-btn" id="btn-sugg-presets" data-category="presets" style="padding: 6px 12px; font-size: 0.8rem;">
+                                💼 Standard Service Presets
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-sm suggestion-filter-btn" id="btn-sugg-retail" data-category="retail" style="padding: 6px 12px; font-size: 0.8rem;">
+                                📦 Retail Products (Public API)
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-sm suggestion-filter-btn" id="btn-sugg-scan" data-category="scan" style="padding: 6px 12px; font-size: 0.8rem;">
+                                📷 Scan Barcode
+                            </button>
+                        </div>
+
+                        <!-- Suggestions Barcode Scanner Viewfinder -->
+                        <div id="suggestions-scanner-section" style="display: none; margin-bottom: 20px;">
+                            <div id="suggestions-scanner-container" style="border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; background: #000; max-width: 500px; margin: 0 auto 16px; position: relative;">
+                                <div id="suggestions-barcode-reader" style="width: 100%;"></div>
+                                <div style="text-align: center; padding: 12px; background: var(--bg-secondary); display: flex; justify-content: center; gap: 12px; align-items: center;">
+                                    <span style="font-size: 0.85rem; color: var(--text-secondary);">Align barcode within camera view</span>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="suggestions-stop-scan-btn">Stop Camera</button>
+                                </div>
+                            </div>
+                            <div id="suggestions-scan-loader" style="display: none; text-align: center; padding: 20px 0;">
+                                <div class="spinner" style="margin: 0 auto 10px;"></div>
+                                <span style="font-size: 0.85rem; color: var(--text-secondary);" id="suggestions-scan-loader-text">Searching barcode database...</span>
+                            </div>
+                        </div>
+
+                        <!-- Suggestions Loading State & Grid -->
+                        <div id="suggestions-loading-wrapper" style="display: none; text-align: center; padding: 20px 0;">
+                            <div class="spinner" style="margin: 0 auto 10px;"></div>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);">Fetching latest retail dataset...</span>
+                        </div>
+                        
+                        <div id="suggestions-error-message" style="display: none; color: #ef4444; font-size: 0.85rem; margin-bottom: 16px;">
+                            Could not load retail items from API. Please check your internet connection.
+                        </div>
+
+                        <div class="suggestions-grid" id="products-suggestions-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+                            <!-- Populated dynamically by app.js -->
+                        </div>
                     </div>
                 </div>
 
                 <!-- ═══════════ SETTINGS PAGE ═══════════ -->
                 <div id="settings-page" class="page" style="display: none;">
-                    <div class="page-header">
+                    <div class="page-header" style="margin-bottom: 20px;">
                         <div class="page-header-left">
                             <h1>Settings</h1>
                             <p>Company profile & preferences</p>
                         </div>
                     </div>
 
+                    <!-- Settings tab navigation header -->
+                    <div class="settings-tabs" style="display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                        <button type="button" class="btn btn-secondary active settings-tab-btn" data-target="settings-tab-profile" style="padding: 8px 16px; font-size: 0.85rem; border-radius: var(--radius-md); display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                            <span>🏢</span> Profile
+                        </button>
+                        <button type="button" class="btn btn-secondary settings-tab-btn" data-target="settings-tab-email" style="padding: 8px 16px; font-size: 0.85rem; border-radius: var(--radius-md); display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                            <span>📧</span> Email (EmailJS)
+                        </button>
+                        <button type="button" class="btn btn-secondary settings-tab-btn" data-target="settings-tab-sync" style="padding: 8px 16px; font-size: 0.85rem; border-radius: var(--radius-md); display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                            <span>🌐</span> Cloud Sync
+                        </button>
+                        <button type="button" class="btn btn-secondary settings-tab-btn" data-target="settings-tab-data" style="padding: 8px 16px; font-size: 0.85rem; border-radius: var(--radius-md); display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                            <span>💾</span> Backup & Data
+                        </button>
+                        <button type="button" class="btn btn-secondary settings-tab-btn" data-target="settings-tab-account" style="padding: 8px 16px; font-size: 0.85rem; border-radius: var(--radius-md); display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                            <span>👤</span> Account & Legal
+                        </button>
+                    </div>
+
                     <div class="settings-sections">
                         <!-- Company Profile -->
-                        <div class="card settings-section">
+                        <div class="card settings-section settings-tab-panel" id="settings-tab-profile">
                             <h3 class="invoice-section-title">
                                 <span>🏢</span> Company Profile
                             </h3>
@@ -973,7 +1043,7 @@
                         </div>
 
                         <!-- Data Management -->
-                        <div class="card settings-section">
+                        <div class="card settings-section settings-tab-panel" id="settings-tab-data" style="display: none;">
                             <h3 class="invoice-section-title">
                                 <span>💾</span> Data Management
                             </h3>
@@ -997,8 +1067,10 @@
                             </div>
                         </div>
 
-                        <!-- Account -->
-                        <div class="card settings-section">
+                        <!-- Account & Legal Panel -->
+                        <div class="settings-tab-panel" id="settings-tab-account" style="display: none; display: flex; flex-direction: column; gap: 24px;">
+                            <!-- Account -->
+                            <div class="card settings-section">
                             <h3 class="invoice-section-title">
                                 <span>👤</span> Account
                             </h3>
@@ -1019,7 +1091,7 @@
                         </div>
 
                         <!-- Email Settings (EmailJS) -->
-                        <div class="card settings-section">
+                        <div class="card settings-section settings-tab-panel" id="settings-tab-email" style="display: none;">
                             <h3 class="invoice-section-title">
                                 <span>📧</span> One-Click Email Sending (EmailJS)
                             </h3>
@@ -1059,7 +1131,7 @@
                         </div>
 
                         <!-- Cloud Database Sync (Firebase) -->
-                        <div class="card settings-section">
+                        <div class="card settings-section settings-tab-panel" id="settings-tab-sync" style="display: none;">
                             <h3 class="invoice-section-title">
                                 <span>🌐</span> Cloud Database Sync (Firebase)
                             </h3>
@@ -1135,6 +1207,7 @@
                                 <span>View Privacy Policy</span>
                             </button>
                         </div>
+                        </div> <!-- End Account & Legal Panel -->
                     </div>
                 </div>
 
@@ -1211,8 +1284,24 @@
             <form id="product-modal-form">
                 <input type="hidden" id="product-modal-id" value="">
                 <div class="form-group">
-                    <label class="form-label" for="prod-name">Item Name *</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label class="form-label" for="prod-name" style="margin: 0;">Item Name *</label>
+                        <button type="button" class="btn btn-secondary btn-sm" id="product-scan-barcode-btn" style="padding: 4px 8px; font-size: 0.75rem; height: auto;">
+                            <span>📷</span> Scan Barcode
+                        </button>
+                    </div>
                     <input type="text" id="prod-name" class="form-input" placeholder="e.g. Consulting Session, Logo Design" required>
+                    <!-- Viewfinder Container -->
+                    <div id="barcode-reader-container" style="display: none; margin-top: 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; background: #000;">
+                        <div id="barcode-reader" style="width: 100%;"></div>
+                        <div id="product-scan-loader" style="display: none; text-align: center; padding: 16px; background: var(--bg-secondary);">
+                            <div class="spinner" style="margin: 0 auto 8px; width: 24px; height: 24px; border-width: 2px;"></div>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);" id="product-scan-loader-text">Looking up barcode...</span>
+                        </div>
+                        <div style="text-align: center; padding: 8px; background: var(--bg-secondary);">
+                            <button type="button" class="btn btn-secondary btn-sm" id="product-stop-scan-btn">Cancel Scan</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="prod-price">Default Price *</label>
@@ -1319,6 +1408,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <!-- Firebase SDK (Compat libraries for standard global namespace) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
