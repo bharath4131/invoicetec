@@ -317,17 +317,20 @@ window.PDF = (function () {
       { text: 'Description', bold: true, fontSize: 9, color: template === 'classic' ? c.primary : '#ffffff' },
       { text: 'Qty',         bold: true, fontSize: 9, color: template === 'classic' ? c.primary : '#ffffff', alignment: 'center' },
       { text: 'Unit Price',  bold: true, fontSize: 9, color: template === 'classic' ? c.primary : '#ffffff', alignment: 'right' },
+      { text: 'Discount',    bold: true, fontSize: 9, color: template === 'classic' ? c.primary : '#ffffff', alignment: 'center' },
       { text: 'Amount',      bold: true, fontSize: 9, color: template === 'classic' ? c.primary : '#ffffff', alignment: 'right' }
     ];
 
     var body = [headerRow];
 
     items.forEach(function (item, idx) {
+      var discountText = item.discount ? item.discount + '%' : '0%';
       body.push([
         { text: '' + (idx + 1), fontSize: 9, alignment: 'center', color: c.secondary },
         { text: item.description || '', fontSize: 9 },
         { text: '' + (item.quantity || 0), fontSize: 9, alignment: 'center' },
         { text: _money(item.rate, inv.currency), fontSize: 9, alignment: 'right' },
+        { text: discountText, fontSize: 9, alignment: 'center' },
         { text: _money(item.amount, inv.currency), fontSize: 9, alignment: 'right', bold: true }
       ]);
     });
@@ -365,7 +368,7 @@ window.PDF = (function () {
     return {
       table: {
         headerRows: 1,
-        widths: [25, '*', 40, 70, 70],
+        widths: [20, '*', 35, 60, 45, 65],
         body: body
       },
       layout: layoutDef,

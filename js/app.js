@@ -625,6 +625,7 @@
             </td>
             <td><input type="number" class="form-input item-qty mono" value="${item ? item.quantity : 1}" min="1" step="1"></td>
             <td><input type="number" class="form-input item-rate mono" value="${item ? item.rate : 0}" min="0" step="0.01" placeholder="0.00"></td>
+            <td><input type="number" class="form-input item-discount mono" value="${item && item.discount ? item.discount : 0}" min="0" max="100" step="1" placeholder="0"></td>
             <td><span class="item-amount mono">${item ? UI.formatCurrency(item.amount, currencyCode) : UI.formatCurrency(0, currencyCode)}</span></td>
             <td><button type="button" class="btn btn-icon remove-item-btn" title="Remove item">✕</button></td>
         `;
@@ -634,6 +635,7 @@
         const descInput = row.querySelector('.item-desc');
         const qtyInput = row.querySelector('.item-qty');
         const rateInput = row.querySelector('.item-rate');
+        const discountInput = row.querySelector('.item-discount');
         const amountSpan = row.querySelector('.item-amount');
         const removeBtn = row.querySelector('.remove-item-btn');
 
@@ -641,7 +643,9 @@
             const currentCurrency = document.getElementById('inv-currency').value;
             const qty = parseFloat(qtyInput.value) || 0;
             const rate = parseFloat(rateInput.value) || 0;
-            amountSpan.textContent = UI.formatCurrency(qty * rate, currentCurrency);
+            const discount = parseFloat(discountInput.value) || 0;
+            const itemAmt = qty * rate * (1 - discount / 100);
+            amountSpan.textContent = UI.formatCurrency(itemAmt, currentCurrency);
             recalculateTotals();
         };
 
@@ -660,6 +664,14 @@
 
         qtyInput.addEventListener('input', updateAmount);
         rateInput.addEventListener('input', updateAmount);
+        discountInput.addEventListener('input', (e) => {
+            let val = parseFloat(e.target.value);
+            if (!isNaN(val)) {
+                if (val < 0) e.target.value = 0;
+                if (val > 100) e.target.value = 100;
+            }
+            updateAmount();
+        });
         removeBtn.addEventListener('click', () => {
             row.remove();
             recalculateTotals();
@@ -676,7 +688,8 @@
         rows.forEach(row => {
             const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
             const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
-            const itemAmt = qty * rate;
+            const discount = parseFloat(row.querySelector('.item-discount').value) || 0;
+            const itemAmt = qty * rate * (1 - discount / 100);
             subtotal += itemAmt;
             row.querySelector('.item-amount').textContent = UI.formatCurrency(itemAmt, currencyCode);
         });
@@ -740,6 +753,7 @@
             const desc = descInput.value.trim();
             const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
             const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+            const discount = parseFloat(row.querySelector('.item-discount').value) || 0;
             if (!desc) {
                 showInlineError(descInput, 'Description is required');
                 hasErrors = true;
@@ -748,7 +762,8 @@
                 description: desc,
                 quantity: qty,
                 rate: rate,
-                amount: qty * rate
+                discount: discount,
+                amount: qty * rate * (1 - discount / 100)
             });
         });
 

@@ -92,6 +92,7 @@ window.Invoices = {
               description: item.description || '',
               quantity: item.quantity || 0,
               rate: item.rate || 0,
+              discount: item.discount || 0,
               amount: item.amount || 0
             };
           });
@@ -151,6 +152,7 @@ window.Invoices = {
               description: item.description || '',
               quantity: item.quantity || 0,
               rate: item.rate || 0,
+              discount: item.discount || 0,
               amount: item.amount || 0
             };
           });
