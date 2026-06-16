@@ -11,6 +11,7 @@
     let selectedTemplate = 'classic';
     let html5QrcodeScanner = null;
     let suggestionsQrcodeScanner = null;
+    let previousInvoiceCurrency = 'USD';
 
     // ─── Initialize App ───────────────────────────────
     async function init() {
@@ -523,8 +524,35 @@
             window.location.hash = '#/invoices';
         });
 
-        // Currency change
+        // Currency change with auto-conversion of existing rates
         document.getElementById('inv-currency').addEventListener('change', () => {
+            const newCurrency = document.getElementById('inv-currency').value;
+            const oldCurrency = previousInvoiceCurrency || 'USD';
+
+            if (newCurrency !== oldCurrency) {
+                const conversionFactor = (CURRENCY_EXCHANGE_RATES[newCurrency] || 1.0) / (CURRENCY_EXCHANGE_RATES[oldCurrency] || 1.0);
+
+                // Convert all item unit rates in the table
+                const rows = document.querySelectorAll('#items-table-body tr');
+                rows.forEach(row => {
+                    const rateInput = row.querySelector('.item-rate');
+                    if (rateInput && rateInput.value) {
+                        const originalRate = parseFloat(rateInput.value) || 0;
+                        rateInput.value = parseFloat((originalRate * conversionFactor).toFixed(2)) || 0;
+                    }
+                });
+
+                // Convert discount flat value if flat discount type is active
+                const discountType = document.getElementById('inv-discount-type').value;
+                const discountValueInput = document.getElementById('inv-discount-value');
+                if (discountType === 'flat' && discountValueInput && discountValueInput.value) {
+                    const originalDiscount = parseFloat(discountValueInput.value) || 0;
+                    discountValueInput.value = parseFloat((originalDiscount * conversionFactor).toFixed(2)) || 0;
+                }
+
+                previousInvoiceCurrency = newCurrency;
+            }
+
             updateFormCurrencyLabels();
             recalculateTotals();
         });
@@ -613,6 +641,8 @@
 
         // Fetch user products/services to build autocomplete dropdown
         const user = Auth.getCurrentUser();
+        const company = user ? await Company.get(user.id) : null;
+        const companyCurrency = company ? company.defaultCurrency || 'USD' : 'USD';
         const products = user ? await Products.getAll(user.id) : [];
         const productOptions = products.map(p => `
             <option value="${p.id}" data-price="${p.price}" data-desc="${UI.escapeHtml(p.description || '')}">${UI.escapeHtml(p.name)}</option>
@@ -661,7 +691,14 @@
                 const desc = selectedOpt.getAttribute('data-desc') || '';
                 const name = selectedOpt.textContent.trim();
 
-                rateInput.value = price;
+                const invoiceCurrency = document.getElementById('inv-currency').value;
+                if (invoiceCurrency !== companyCurrency) {
+                    const conversionFactor = (CURRENCY_EXCHANGE_RATES[invoiceCurrency] || 1.0) / (CURRENCY_EXCHANGE_RATES[companyCurrency] || 1.0);
+                    rateInput.value = parseFloat((price * conversionFactor).toFixed(2));
+                } else {
+                    rateInput.value = price;
+                }
+
                 descInput.value = name + (desc ? ' - ' + desc : '');
                 updateAmount();
             }
@@ -1067,13 +1104,23 @@
         });
     }
 
-    function openProductModal(product = null) {
+    async function openProductModal(product = null) {
         const overlay = document.getElementById('product-modal-overlay');
         const title = document.getElementById('product-modal-title');
         const form = document.getElementById('product-modal-form');
 
         form.reset();
         document.getElementById('product-modal-id').value = '';
+
+        // Dynamically update the price label based on company default currency
+        const user = Auth.getCurrentUser();
+        const company = user ? await Company.get(user.id) : null;
+        const defaultCurrency = company ? company.defaultCurrency || 'USD' : 'USD';
+        const symbol = UI.getCurrencySymbol(defaultCurrency);
+        const priceLabel = document.querySelector('label[for="prod-price"]');
+        if (priceLabel) {
+            priceLabel.textContent = `Default Price (${symbol}) *`;
+        }
 
         if (product) {
             title.textContent = 'Edit Product/Service';
@@ -1864,6 +1911,7 @@
         const company = await Company.get(user.id);
         const defaultCurrency = company ? company.defaultCurrency || 'USD' : 'USD';
         document.getElementById('inv-currency').value = defaultCurrency;
+        previousInvoiceCurrency = defaultCurrency;
         updateFormCurrencyLabels();
 
         // Reset template selector
@@ -1905,6 +1953,7 @@
             document.getElementById('inv-due-date').value = UI.formatDateInput(invoice.dueDate);
             document.getElementById('inv-status').value = invoice.status;
             document.getElementById('inv-currency').value = invoice.currency || 'USD';
+            previousInvoiceCurrency = invoice.currency || 'USD';
             updateFormCurrencyLabels();
             document.getElementById('inv-tax-rate').value = invoice.taxRate || 0;
             document.getElementById('inv-discount-type').value = invoice.discountType || 'percentage';
@@ -2177,7 +2226,20 @@
             }
         }
 
-        grid.innerHTML = items.map((item, idx) => `
+        // Fetch company default currency to support multi-currency conversion
+        const company = await Company.get(user.id);
+        const defaultCurrency = company ? company.defaultCurrency || 'USD' : 'USD';
+
+        // Convert item prices from USD to default currency
+        const convertedItems = items.map(item => {
+            const convertedPrice = convertFromUSD(item.price, defaultCurrency);
+            return {
+                ...item,
+                price: convertedPrice
+            };
+        });
+
+        grid.innerHTML = convertedItems.map((item, idx) => `
             <div class="card card-hover animate-fadeIn delay-${Math.min(idx + 1, 5)}" style="padding: 16px; border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; gap: 12px; background: var(--bg-secondary);">
                 <div>
                     <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">${UI.escapeHtml(item.name)}</h4>
@@ -2186,7 +2248,7 @@
                     </p>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border-color); padding-top: 10px;">
-                    <span class="mono" style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">${UI.formatCurrency(item.price, 'USD')}</span>
+                    <span class="mono" style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">${UI.formatCurrency(item.price, defaultCurrency)}</span>
                     <button class="btn btn-primary btn-sm quick-add-suggest-btn" style="padding: 4px 8px; font-size: 0.75rem;" data-idx="${idx}">+ Quick Add</button>
                 </div>
             </div>
@@ -2195,7 +2257,7 @@
         grid.querySelectorAll('.quick-add-suggest-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const index = parseInt(btn.dataset.idx);
-                const selected = items[index];
+                const selected = convertedItems[index];
                 if (!selected) return;
 
                 const data = {
@@ -2445,7 +2507,65 @@
         const container = document.getElementById('suggestions-scanner-container');
         if (container) container.style.display = 'block';
 
-        suggestionsQrcodeScanner = new Html5Qrcode("suggestions-barcode-reader");
+        const formats = [
+            Html5QrcodeSupportedFormats.QR_CODE,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.CODE_39
+        ];
+
+        suggestionsQrcodeScanner = new Html5Qrcode("suggestions-barcode-reader", {
+            formatsToSupport: formats
+        });
+
+        // Wire up manual lookup inputs inside the scanner
+        const manualInput = document.getElementById('suggestions-manual-input');
+        const manualBtn = document.getElementById('suggestions-manual-lookup-btn');
+        if (manualInput && manualBtn) {
+            manualInput.value = '';
+            
+            const handleManualLookup = async () => {
+                const code = manualInput.value.trim();
+                if (!code) {
+                    UI.showToast("Please enter a barcode number.", "warning");
+                    return;
+                }
+                stopCatalogScanner();
+                playBeep('success');
+                
+                const loader = document.getElementById('suggestions-scan-loader');
+                const loaderText = document.getElementById('suggestions-scan-loader-text');
+                if (loader && loaderText) {
+                    loader.style.display = 'block';
+                    loaderText.textContent = `Looking up code: ${code}...`;
+                }
+
+                try {
+                    const product = await lookupProductByBarcode(code);
+                    if (product) {
+                        renderScannedProductResult(product);
+                    } else {
+                        UI.showToast("No product details found for code: " + code, "info");
+                    }
+                } catch (err) {
+                    console.error("Manual catalog lookup error:", err);
+                    UI.showToast("Failed to lookup barcode", "error");
+                } finally {
+                    if (loader) loader.style.display = 'none';
+                }
+            };
+
+            manualBtn.onclick = handleManualLookup;
+            manualInput.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleManualLookup();
+                }
+            };
+        }
 
         const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
             stopCatalogScanner();
@@ -2473,16 +2593,84 @@
             }
         };
 
-        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+        const config = {
+            fps: 15,
+            qrbox: (width, height) => {
+                const boxWidth = Math.min(width * 0.85, 320);
+                const boxHeight = Math.min(height * 0.45, 160);
+                return {
+                    width: Math.floor(boxWidth),
+                    height: Math.floor(boxHeight)
+                };
+            }
+        };
 
-        suggestionsQrcodeScanner.start(
-            { facingMode: "environment" },
-            config,
-            qrCodeSuccessCallback
-        ).catch(err => {
-            console.error("Catalog camera start failed: ", err);
-            UI.showToast("Failed to access camera: " + err.message, "error");
-            if (container) container.style.display = 'none';
+        // Try to enumerate cameras for robust selection
+        Html5Qrcode.getCameras().then(devices => {
+            if (devices && devices.length) {
+                // Find back/rear camera if possible
+                let selectedCameraId = devices[0].id;
+                for (const device of devices) {
+                    const label = device.label.toLowerCase();
+                    if (label.includes('back') || label.includes('rear') || label.includes('environment')) {
+                        selectedCameraId = device.id;
+                        break;
+                    }
+                }
+
+                suggestionsQrcodeScanner.start(
+                    selectedCameraId,
+                    config,
+                    qrCodeSuccessCallback
+                ).catch(err => {
+                    console.warn("Catalog selected camera start failed, trying first device...", err);
+                    suggestionsQrcodeScanner.start(
+                        devices[0].id,
+                        config,
+                        qrCodeSuccessCallback
+                    ).catch(err2 => {
+                        console.error("Catalog camera device start failed: ", err2);
+                        UI.showToast("Failed to access camera: " + err2.message, "error");
+                        if (container) container.style.display = 'none';
+                    });
+                });
+            } else {
+                // Fallback to constraints if no devices enumerated
+                suggestionsQrcodeScanner.start(
+                    { facingMode: "environment" },
+                    config,
+                    qrCodeSuccessCallback
+                ).catch(err => {
+                    console.warn("Catalog rear camera constraint failed, trying user camera...", err);
+                    suggestionsQrcodeScanner.start(
+                        { facingMode: "user" },
+                        config,
+                        qrCodeSuccessCallback
+                    ).catch(err2 => {
+                        console.error("Catalog constraints camera start failed: ", err2);
+                        UI.showToast("Failed to access camera: " + err2.message, "error");
+                        if (container) container.style.display = 'none';
+                    });
+                });
+            }
+        }).catch(err => {
+            console.warn("Catalog getCameras failed, attempting constraints...", err);
+            suggestionsQrcodeScanner.start(
+                { facingMode: "environment" },
+                config,
+                qrCodeSuccessCallback
+            ).catch(err2 => {
+                console.warn("Catalog rear camera constraint failed, trying user camera...", err2);
+                suggestionsQrcodeScanner.start(
+                    { facingMode: "user" },
+                    config,
+                    qrCodeSuccessCallback
+                ).catch(err3 => {
+                    console.error("Catalog all camera options failed: ", err3);
+                    UI.showToast("Failed to access camera: " + err3.message, "error");
+                    if (container) container.style.display = 'none';
+                });
+            });
         });
     }
 
@@ -2504,9 +2692,16 @@
         }
     }
 
-    function renderScannedProductResult(product) {
+    async function renderScannedProductResult(product) {
         const grid = document.getElementById('products-suggestions-grid');
         if (!grid) return;
+
+        const user = Auth.getCurrentUser();
+        const company = user ? await Company.get(user.id) : null;
+        const defaultCurrency = company ? company.defaultCurrency || 'USD' : 'USD';
+
+        // Convert price from USD to company default currency
+        const convertedPrice = convertFromUSD(product.price, defaultCurrency);
 
         grid.innerHTML = `
             <div class="card scanned-product-card animate-fadeIn" style="grid-column: 1 / -1; padding: 24px; display: flex; flex-direction: column; gap: 16px; position: relative;">
@@ -2519,7 +2714,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 8px; flex-wrap: wrap; gap: 16px;">
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <span style="font-size: 0.75rem; color: var(--text-tertiary);">Estimated Value</span>
-                        <span class="mono" style="font-size: 1.3rem; font-weight: 700; color: var(--accent-primary);">${UI.formatCurrency(product.price, 'USD')}</span>
+                        <span class="mono" style="font-size: 1.3rem; font-weight: 700; color: var(--accent-primary);">${UI.formatCurrency(convertedPrice, defaultCurrency)}</span>
                     </div>
                     <div style="display: flex; gap: 12px;">
                         <button class="btn btn-secondary" id="btn-scan-again" style="padding: 8px 16px; font-size: 0.85rem;">
@@ -2548,7 +2743,7 @@
             const data = {
                 userId: user.id,
                 name: product.name,
-                price: product.price,
+                price: convertedPrice,
                 description: product.description
             };
 
@@ -2572,7 +2767,23 @@
         });
     }
 
-    // ─── Barcode Scanning Utilities ───────────────────
+    // ─── Barcode & Currency Conversions Utilities ──────
+    const CURRENCY_EXCHANGE_RATES = {
+        USD: 1.0,
+        EUR: 0.92,
+        GBP: 0.79,
+        INR: 83.50,
+        CAD: 1.37,
+        AUD: 1.51,
+        JPY: 157.0,
+        SGD: 1.35
+    };
+
+    function convertFromUSD(amount, targetCurrency) {
+        const rate = CURRENCY_EXCHANGE_RATES[targetCurrency] || 1.0;
+        return parseFloat((amount * rate).toFixed(2));
+    }
+
     const MOCK_BARCODE_MAP = {
         "12345678": {
             name: "Custom Website Development",
@@ -2743,7 +2954,78 @@
         const readerContainer = document.getElementById('barcode-reader-container');
         if (readerContainer) readerContainer.style.display = 'block';
 
-        html5QrcodeScanner = new Html5Qrcode("barcode-reader");
+        const formats = [
+            Html5QrcodeSupportedFormats.QR_CODE,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.CODE_39
+        ];
+
+        html5QrcodeScanner = new Html5Qrcode("barcode-reader", {
+            formatsToSupport: formats
+        });
+
+        // Wire up manual lookup inputs inside the scanner
+        const manualInput = document.getElementById('barcode-manual-input');
+        const manualBtn = document.getElementById('barcode-manual-lookup-btn');
+        if (manualInput && manualBtn) {
+            manualInput.value = '';
+
+            const handleManualLookup = async () => {
+                const code = manualInput.value.trim();
+                if (!code) {
+                    UI.showToast("Please enter a barcode number.", "warning");
+                    return;
+                }
+                stopBarcodeScanner();
+
+                const loader = document.getElementById('product-scan-loader');
+                if (loader) {
+                    loader.style.display = 'block';
+                    document.getElementById('product-scan-loader-text').textContent = `Looking up code: ${code}...`;
+                }
+
+                try {
+                    const product = await lookupProductByBarcode(code);
+                    if (product) {
+                        playBeep('success');
+                        const nameInput = document.getElementById('prod-name');
+                        const priceInput = document.getElementById('prod-price');
+                        const descInput = document.getElementById('prod-description');
+
+                        if (nameInput) nameInput.value = product.name;
+                        if (priceInput) priceInput.value = product.price;
+                        if (descInput) descInput.value = product.description;
+
+                        UI.showToast(`Found product: ${product.name}`, "success");
+                    } else {
+                        playBeep('error');
+                        const nameInput = document.getElementById('prod-name');
+                        if (nameInput) nameInput.value = code;
+                        UI.showToast(`Barcode details not found for: ${code}`, "info");
+                    }
+                } catch (err) {
+                    console.error("Manual lookup error: ", err);
+                    playBeep('error');
+                    const nameInput = document.getElementById('prod-name');
+                    if (nameInput) nameInput.value = code;
+                    UI.showToast("Lookup failed.", "warning");
+                } finally {
+                    if (loader) loader.style.display = 'none';
+                }
+            };
+
+            manualBtn.onclick = handleManualLookup;
+            manualInput.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleManualLookup();
+                }
+            };
+        }
         
         const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
             stopBarcodeScanner();
@@ -2784,16 +3066,84 @@
             }
         };
 
-        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+        const config = {
+            fps: 15,
+            qrbox: (width, height) => {
+                const boxWidth = Math.min(width * 0.85, 320);
+                const boxHeight = Math.min(height * 0.45, 160);
+                return {
+                    width: Math.floor(boxWidth),
+                    height: Math.floor(boxHeight)
+                };
+            }
+        };
 
-        html5QrcodeScanner.start(
-            { facingMode: "environment" },
-            config,
-            qrCodeSuccessCallback
-        ).catch(err => {
-            console.error("Camera start failed: ", err);
-            UI.showToast("Failed to access camera: " + err.message, "error");
-            if (readerContainer) readerContainer.style.display = 'none';
+        // Try to enumerate cameras for robust selection
+        Html5Qrcode.getCameras().then(devices => {
+            if (devices && devices.length) {
+                // Find back/rear camera if possible
+                let selectedCameraId = devices[0].id;
+                for (const device of devices) {
+                    const label = device.label.toLowerCase();
+                    if (label.includes('back') || label.includes('rear') || label.includes('environment')) {
+                        selectedCameraId = device.id;
+                        break;
+                    }
+                }
+
+                html5QrcodeScanner.start(
+                    selectedCameraId,
+                    config,
+                    qrCodeSuccessCallback
+                ).catch(err => {
+                    console.warn("Selected camera start failed, trying first device...", err);
+                    html5QrcodeScanner.start(
+                        devices[0].id,
+                        config,
+                        qrCodeSuccessCallback
+                    ).catch(err2 => {
+                        console.error("Camera device start failed: ", err2);
+                        UI.showToast("Failed to access camera: " + err2.message, "error");
+                        if (readerContainer) readerContainer.style.display = 'none';
+                    });
+                });
+            } else {
+                // Fallback to constraints if no devices enumerated
+                html5QrcodeScanner.start(
+                    { facingMode: "environment" },
+                    config,
+                    qrCodeSuccessCallback
+                ).catch(err => {
+                    console.warn("Rear camera constraint failed, trying user camera...", err);
+                    html5QrcodeScanner.start(
+                        { facingMode: "user" },
+                        config,
+                        qrCodeSuccessCallback
+                    ).catch(err2 => {
+                        console.error("Constraints camera start failed: ", err2);
+                        UI.showToast("Failed to access camera: " + err2.message, "error");
+                        if (readerContainer) readerContainer.style.display = 'none';
+                    });
+                });
+            }
+        }).catch(err => {
+            console.warn("getCameras failed, attempting constraints...", err);
+            html5QrcodeScanner.start(
+                { facingMode: "environment" },
+                config,
+                qrCodeSuccessCallback
+            ).catch(err2 => {
+                console.warn("Rear camera constraint failed, trying user camera...", err2);
+                html5QrcodeScanner.start(
+                    { facingMode: "user" },
+                    config,
+                    qrCodeSuccessCallback
+                ).catch(err3 => {
+                    console.error("All camera options failed: ", err3);
+                    UI.showToast("Failed to access camera: " + err3.message, "error");
+                    if (readerContainer) readerContainer.style.display = 'none';
+                });
+            });
         });
     }
 

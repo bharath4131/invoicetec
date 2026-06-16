@@ -894,9 +894,15 @@
                         <div id="suggestions-scanner-section" style="display: none; margin-bottom: 20px;">
                             <div id="suggestions-scanner-container" style="border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; background: #000; max-width: 500px; margin: 0 auto 16px; position: relative;">
                                 <div id="suggestions-barcode-reader" style="width: 100%;"></div>
-                                <div style="text-align: center; padding: 12px; background: var(--bg-secondary); display: flex; justify-content: center; gap: 12px; align-items: center;">
-                                    <span style="font-size: 0.85rem; color: var(--text-secondary);">Align barcode within camera view</span>
-                                    <button type="button" class="btn btn-secondary btn-sm" id="suggestions-stop-scan-btn">Stop Camera</button>
+                                <div style="text-align: center; padding: 16px; background: var(--bg-secondary); display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--border-color);">
+                                    <div style="display: flex; gap: 8px; justify-content: center; align-items: center; width: 100%;">
+                                        <input type="text" id="suggestions-manual-input" class="form-input" placeholder="Or enter barcode digits manually..." style="font-size: 0.8rem; padding: 6px 10px; flex: 1; height: 32px; background: var(--bg-primary);">
+                                        <button type="button" class="btn btn-secondary btn-sm" id="suggestions-manual-lookup-btn" style="padding: 6px 12px; font-size: 0.8rem; height: 32px;">Lookup</button>
+                                    </div>
+                                    <div style="display: flex; justify-content: center; align-items: center; gap: 12px; width: 100%;">
+                                        <span style="font-size: 0.85rem; color: var(--text-secondary);">Align barcode within camera view</span>
+                                        <button type="button" class="btn btn-secondary btn-sm" id="suggestions-stop-scan-btn">Stop Camera</button>
+                                    </div>
                                 </div>
                             </div>
                             <div id="suggestions-scan-loader" style="display: none; text-align: center; padding: 20px 0;">
@@ -1298,8 +1304,12 @@
                             <div class="spinner" style="margin: 0 auto 8px; width: 24px; height: 24px; border-width: 2px;"></div>
                             <span style="font-size: 0.85rem; color: var(--text-secondary);" id="product-scan-loader-text">Looking up barcode...</span>
                         </div>
-                        <div style="text-align: center; padding: 8px; background: var(--bg-secondary);">
-                            <button type="button" class="btn btn-secondary btn-sm" id="product-stop-scan-btn">Cancel Scan</button>
+                        <div style="text-align: center; padding: 12px; background: var(--bg-secondary); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 12px;">
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="barcode-manual-input" class="form-input" placeholder="Or enter barcode digits manually..." style="font-size: 0.8rem; padding: 6px 10px; flex: 1; height: 32px; background: var(--bg-primary);">
+                                <button type="button" class="btn btn-secondary btn-sm" id="barcode-manual-lookup-btn" style="padding: 6px 12px; font-size: 0.8rem; height: 32px;">Lookup</button>
+                            </div>
+                            <button type="button" class="btn btn-secondary btn-sm" id="product-stop-scan-btn" style="align-self: center;">Cancel Scan</button>
                         </div>
                     </div>
                 </div>
