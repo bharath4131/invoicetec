@@ -22,21 +22,34 @@ window.Invoices = {
         return 'INV-0001';
       }
 
-      var maxNum = 0;
-      invoices.forEach(function (inv) {
-        if (inv.invoiceNumber && typeof inv.invoiceNumber === 'string') {
-          var match = inv.invoiceNumber.match(/(\d+)$/);
-          if (match) {
-            var num = parseInt(match[1], 10);
-            if (num > maxNum) {
-              maxNum = num;
-            }
-          }
-        }
+      // Sort invoices by date/id descending to find the latest invoice pattern
+      invoices.sort(function (a, b) {
+        var dateA = new Date(a.date || a.createdAt || 0);
+        var dateB = new Date(b.date || b.createdAt || 0);
+        if (dateB - dateA !== 0) return dateB - dateA;
+        return (b.id || 0) - (a.id || 0);
       });
 
-      var next = maxNum + 1;
-      return 'INV-' + String(next).padStart(4, '0');
+      var latestInvoice = invoices.find(function (inv) {
+        return inv.invoiceNumber && typeof inv.invoiceNumber === 'string' && /(\d+)$/.test(inv.invoiceNumber);
+      });
+
+      if (!latestInvoice) {
+        return 'INV-0001';
+      }
+
+      var lastNumStr = latestInvoice.invoiceNumber;
+      var match = lastNumStr.match(/^(.*?)(\d+)$/);
+      if (match) {
+        var prefix = match[1];
+        var numStr = match[2];
+        var nextVal = parseInt(numStr, 10) + 1;
+        var padding = numStr.length;
+        var nextNumStr = String(nextVal).padStart(padding, '0');
+        return prefix + nextNumStr;
+      }
+
+      return 'INV-0001';
     } catch (error) {
       throw new Error('Failed to generate invoice number: ' + error.message);
     }

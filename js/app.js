@@ -350,6 +350,14 @@
         document.getElementById('customers-empty-add')?.addEventListener('click', () => {
             openCustomerModal();
         });
+
+        // Products page buttons
+        document.getElementById('products-add-btn').addEventListener('click', () => {
+            openProductModal();
+        });
+        document.getElementById('products-empty-add')?.addEventListener('click', () => {
+            openProductModal();
+        });
     }
 
     // ─── Sidebar ──────────────────────────────────────
@@ -452,8 +460,19 @@
             }, 300));
         }
 
+        // Product search
+        const prodSearch = document.getElementById('product-search');
+        if (prodSearch) {
+            prodSearch.addEventListener('input', UI.debounce(async () => {
+                await renderProductsList();
+            }, 300));
+        }
+
         // Customer modal
         setupCustomerModal();
+
+        // Product modal
+        setupProductModal();
 
         // Privacy Policy modal
         setupPrivacyModal();
@@ -472,13 +491,16 @@
 
         // Firebase sync form
         setupFirebaseSyncForm();
+
+        // EmailJS settings form
+        setupEmailJsForm();
     }
 
     // ─── Invoice Form ─────────────────────────────────
     function setupInvoiceForm() {
         // Add item button
-        document.getElementById('add-item-btn').addEventListener('click', () => {
-            addInvoiceItem();
+        document.getElementById('add-item-btn').addEventListener('click', async () => {
+            await addInvoiceItem();
         });
 
         // Save draft
@@ -578,13 +600,29 @@
         document.getElementById('th-amount').textContent = `Amount (${symbol})`;
     }
 
-    function addInvoiceItem(item = null) {
+    async function addInvoiceItem(item = null) {
         const currencyCode = document.getElementById('inv-currency').value;
         const tbody = document.getElementById('items-table-body');
         const row = document.createElement('tr');
         row.className = 'item-row animate-fadeIn';
+
+        // Fetch user products/services to build autocomplete dropdown
+        const user = Auth.getCurrentUser();
+        const products = user ? await Products.getAll(user.id) : [];
+        const productOptions = products.map(p => `
+            <option value="${p.id}" data-price="${p.price}" data-desc="${UI.escapeHtml(p.description || '')}">${UI.escapeHtml(p.name)}</option>
+        `).join('');
+
         row.innerHTML = `
-            <td><input type="text" class="form-input item-desc" placeholder="Item description" value="${item ? UI.escapeHtml(item.description) : ''}" required></td>
+            <td>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <select class="form-input item-product-select" style="font-size: 0.85rem; padding: 6px 10px; height: auto;">
+                        <option value="">-- Choose Product/Service --</option>
+                        ${productOptions}
+                    </select>
+                    <input type="text" class="form-input item-desc" placeholder="Item description" value="${item ? UI.escapeHtml(item.description) : ''}" required>
+                </div>
+            </td>
             <td><input type="number" class="form-input item-qty mono" value="${item ? item.quantity : 1}" min="1" step="1"></td>
             <td><input type="number" class="form-input item-rate mono" value="${item ? item.rate : 0}" min="0" step="0.01" placeholder="0.00"></td>
             <td><span class="item-amount mono">${item ? UI.formatCurrency(item.amount, currencyCode) : UI.formatCurrency(0, currencyCode)}</span></td>
@@ -592,6 +630,8 @@
         `;
 
         // Events
+        const selectEl = row.querySelector('.item-product-select');
+        const descInput = row.querySelector('.item-desc');
         const qtyInput = row.querySelector('.item-qty');
         const rateInput = row.querySelector('.item-rate');
         const amountSpan = row.querySelector('.item-amount');
@@ -604,6 +644,19 @@
             amountSpan.textContent = UI.formatCurrency(qty * rate, currentCurrency);
             recalculateTotals();
         };
+
+        selectEl.addEventListener('change', () => {
+            const selectedOpt = selectEl.options[selectEl.selectedIndex];
+            if (selectedOpt && selectedOpt.value) {
+                const price = parseFloat(selectedOpt.getAttribute('data-price')) || 0;
+                const desc = selectedOpt.getAttribute('data-desc') || '';
+                const name = selectedOpt.textContent.trim();
+
+                rateInput.value = price;
+                descInput.value = name + (desc ? ' - ' + desc : '');
+                updateAmount();
+            }
+        });
 
         qtyInput.addEventListener('input', updateAmount);
         rateInput.addEventListener('input', updateAmount);
@@ -924,6 +977,86 @@
         customerModalCallback = null;
     }
 
+    // ─── Product Modal ─────────────────────────────────
+    let productModalCallback = null;
+
+    function setupProductModal() {
+        const overlay = document.getElementById('product-modal-overlay');
+        const closeBtn = document.getElementById('product-modal-close');
+        const cancelBtn = document.getElementById('product-modal-cancel');
+        const form = document.getElementById('product-modal-form');
+
+        closeBtn.addEventListener('click', closeProductModal);
+        cancelBtn.addEventListener('click', closeProductModal);
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeProductModal();
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = Auth.getCurrentUser();
+            if (!user) return;
+
+            const id = document.getElementById('product-modal-id').value;
+            const data = {
+                userId: user.id,
+                name: document.getElementById('prod-name').value.trim(),
+                price: parseFloat(document.getElementById('prod-price').value),
+                description: document.getElementById('prod-description').value.trim()
+            };
+
+            try {
+                if (id) {
+                    await Products.update(parseInt(id), data);
+                    UI.showToast('Item updated!', 'success');
+                } else {
+                    const newId = await Products.add(data);
+                    UI.showToast('Item added!', 'success');
+                    if (productModalCallback) {
+                        productModalCallback(newId);
+                    }
+                }
+                if (window.Sync && Sync.isEnabled()) {
+                    Sync.push(user.id);
+                }
+                closeProductModal();
+                // Refresh current page
+                const hash = window.location.hash;
+                if (hash.startsWith('#/products')) {
+                    await renderProductsList();
+                }
+            } catch (err) {
+                UI.showToast(err.message, 'error');
+            }
+        });
+    }
+
+    function openProductModal(product = null) {
+        const overlay = document.getElementById('product-modal-overlay');
+        const title = document.getElementById('product-modal-title');
+        const form = document.getElementById('product-modal-form');
+
+        form.reset();
+        document.getElementById('product-modal-id').value = '';
+
+        if (product) {
+            title.textContent = 'Edit Product/Service';
+            document.getElementById('product-modal-id').value = product.id;
+            document.getElementById('prod-name').value = product.name || '';
+            document.getElementById('prod-price').value = product.price || 0;
+            document.getElementById('prod-description').value = product.description || '';
+        } else {
+            title.textContent = 'Add Product/Service';
+        }
+
+        overlay.classList.add('active');
+    }
+
+    function closeProductModal() {
+        document.getElementById('product-modal-overlay').classList.remove('active');
+        productModalCallback = null;
+    }
+
     // ─── Privacy Modal ────────────────────────────────
     function setupPrivacyModal() {
         const overlay = document.getElementById('privacy-modal-overlay');
@@ -1090,6 +1223,26 @@
                 UI.showToast('Cloud sync disabled', 'info');
                 Sync.updateSyncStatusBadge('Disconnected');
             }
+        });
+    }
+
+    // ─── EmailJS Settings Form ────────────────────────
+    function setupEmailJsForm() {
+        const form = document.getElementById('emailjs-settings-form');
+        if (!form) return;
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const publicKey = document.getElementById('emailjs-public-key').value.trim();
+            const serviceId = document.getElementById('emailjs-service-id').value.trim();
+            const templateId = document.getElementById('emailjs-template-id').value.trim();
+
+            localStorage.setItem('emailjs_public_key', publicKey);
+            localStorage.setItem('emailjs_service_id', serviceId);
+            localStorage.setItem('emailjs_template_id', templateId);
+
+            UI.showToast('EmailJS settings saved successfully!', 'success');
         });
     }
 
@@ -1390,7 +1543,41 @@
                 if (method === 'email') {
                     var emailBody = `Hello ${customer.name || 'there'},\n\nHere is Invoice ${invoice.invoiceNumber} from ${companyName}.\n\nTotal Due: ${formattedTotal}\nDue Date: ${UI.formatDate(invoice.dueDate)}\n\nThank you for your business!\n\nBest regards,\n${companyName}`;
                     var gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(customer.email || '')}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
-                    window.open(gmailUrl, '_blank');
+
+                    const emailjsPublicKey = localStorage.getItem('emailjs_public_key');
+                    const emailjsServiceId = localStorage.getItem('emailjs_service_id');
+                    const emailjsTemplateId = localStorage.getItem('emailjs_template_id');
+
+                    if (emailjsPublicKey && emailjsServiceId && emailjsTemplateId) {
+                        const activeTemplate = document.querySelector('#preview-template-selector .template-option.active');
+                        const template = activeTemplate ? activeTemplate.getAttribute('data-template') : invoice.template || 'classic';
+                        const docDef = PDF.generateDocDefinition(invoice, company, template);
+
+                        UI.showToast('Generating PDF attachment...', 'info');
+                        pdfMake.createPdf(docDef).getBase64(async function (base64Str) {
+                            try {
+                                UI.showToast('Sending email directly...', 'info');
+                                emailjs.init({ publicKey: emailjsPublicKey });
+
+                                const templateParams = {
+                                    to_email: customer.email || '',
+                                    client_name: customer.name || 'Valued Customer',
+                                    invoice_number: invoice.invoiceNumber,
+                                    invoice_pdf: `data:application/pdf;base64,${base64Str}`
+                                };
+
+                                await emailjs.send(emailjsServiceId, emailjsTemplateId, templateParams);
+                                UI.showToast('Email sent directly to customer!', 'success');
+                            } catch (err) {
+                                console.error('EmailJS send error:', err);
+                                UI.showToast('Direct sending failed. Opening Gmail instead...', 'warning');
+                                window.open(gmailUrl, '_blank');
+                            }
+                        });
+                    } else {
+                        UI.showToast('To email in 1-click directly, configure EmailJS in Settings! Opening Gmail...', 'info');
+                        window.open(gmailUrl, '_blank');
+                    }
                 } else if (method === 'whatsapp') {
                     var cleanPhone = (customer.phone || '').replace(/[^\d+]/g, '');
                     var waText = `Hello *${customer.name || 'there'}*,\n\nHere is *Invoice ${invoice.invoiceNumber}* from *${companyName}*.\n\n*Total Due:* ${formattedTotal}\n*Due Date:* ${UI.formatDate(invoice.dueDate)}\n\nThank you for your business!`;
@@ -1631,7 +1818,7 @@
         document.querySelector('#inv-template-selector .template-option[data-template="classic"]').classList.add('active');
 
         // Add one empty item row
-        addInvoiceItem();
+        await addInvoiceItem();
 
         // Populate customer dropdown
         await populateCustomerDropdown();
@@ -1685,9 +1872,11 @@
             // Populate items
             document.getElementById('items-table-body').innerHTML = '';
             if (invoice.items && invoice.items.length > 0) {
-                invoice.items.forEach(item => addInvoiceItem(item));
+                for (const item of invoice.items) {
+                    await addInvoiceItem(item);
+                }
             } else {
-                addInvoiceItem();
+                await addInvoiceItem();
             }
 
             recalculateTotals();
@@ -1814,6 +2003,83 @@
         }
     }
 
+    // ─── Products ──────────────────────────────────────
+    window.showProducts = async function () {
+        showAppShell();
+        document.getElementById('header-title').textContent = 'Products & Services';
+        document.getElementById('product-search').value = '';
+        await renderProductsList();
+    };
+
+    async function renderProductsList() {
+        const user = Auth.getCurrentUser();
+        if (!user) return;
+
+        const query = document.getElementById('product-search').value.trim();
+        let products;
+        if (query) {
+            products = await Products.search(user.id, query);
+        } else {
+            products = await Products.getAll(user.id);
+        }
+
+        const tableCard = document.getElementById('products-table-card');
+        const tbody = document.getElementById('products-table-body');
+        const emptyState = document.getElementById('products-empty');
+
+        if (products.length === 0) {
+            tableCard.style.display = 'none';
+            emptyState.style.display = '';
+        } else {
+            tableCard.style.display = '';
+            emptyState.style.display = 'none';
+
+            const company = await Company.get(user.id);
+            const defaultCurrency = company ? company.defaultCurrency || 'USD' : 'USD';
+
+            tbody.innerHTML = products.map((prod, i) => `
+                <tr class="animate-fadeIn delay-${Math.min(i + 1, 5)}" data-id="${prod.id}">
+                    <td style="font-weight: 600; color: var(--text-primary);">${UI.escapeHtml(prod.name)}</td>
+                    <td style="color: var(--text-secondary); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        ${UI.escapeHtml(prod.description || '')}
+                    </td>
+                    <td class="mono" style="font-weight: 500;">${UI.formatCurrency(prod.price, defaultCurrency)}</td>
+                    <td style="text-align: right; white-space: nowrap;">
+                        <button class="btn btn-ghost btn-sm prod-edit-btn" style="padding: 4px 8px; margin-right: 4px;" data-id="${prod.id}">✏️ Edit</button>
+                        <button class="btn btn-ghost btn-sm prod-del-btn" style="padding: 4px 8px; color: var(--status-overdue);" data-id="${prod.id}">🗑️ Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Attach events
+            tbody.querySelectorAll('.prod-edit-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const prod = await Products.get(parseInt(btn.dataset.id));
+                    openProductModal(prod);
+                });
+            });
+            tbody.querySelectorAll('.prod-del-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    UI.confirmDialog('Delete this item from the catalog?', async () => {
+                        try {
+                            const user = Auth.getCurrentUser();
+                            await Products.delete(parseInt(btn.dataset.id));
+                            UI.showToast('Item deleted', 'info');
+                            if (window.Sync && Sync.isEnabled() && user) {
+                                Sync.push(user.id);
+                            }
+                            await renderProductsList();
+                        } catch (err) {
+                            UI.showToast(err.message, 'error');
+                        }
+                    });
+                });
+            });
+        }
+    }
+
     // ─── Settings ─────────────────────────────────────
     window.showSettings = async function () {
         showAppShell();
@@ -1902,6 +2168,15 @@
                 }
             }
         }
+
+        // Initialize EmailJS fields
+        const emailjsPublicKey = document.getElementById('emailjs-public-key');
+        const emailjsServiceId = document.getElementById('emailjs-service-id');
+        const emailjsTemplateId = document.getElementById('emailjs-template-id');
+
+        if (emailjsPublicKey) emailjsPublicKey.value = localStorage.getItem('emailjs_public_key') || '';
+        if (emailjsServiceId) emailjsServiceId.value = localStorage.getItem('emailjs_service_id') || '';
+        if (emailjsTemplateId) emailjsTemplateId.value = localStorage.getItem('emailjs_template_id') || '';
     };
 
     // ─── Helpers ──────────────────────────────────────

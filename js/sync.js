@@ -99,7 +99,8 @@ window.Sync = (function () {
       invoices: [],
       invoiceItems: [],
       customers: [],
-      companyProfile: null
+      companyProfile: null,
+      products: []
     };
 
     const localInvoices = local.invoices || [];
@@ -108,6 +109,8 @@ window.Sync = (function () {
     const remoteItems = remote.invoiceItems || [];
     const localCustomers = local.customers || [];
     const remoteCustomers = remote.customers || [];
+    const localProducts = local.products || [];
+    const remoteProducts = remote.products || [];
 
     // --- 1. Merge Company Profile ---
     const localComp = local.companyProfile;
@@ -206,6 +209,30 @@ window.Sync = (function () {
       }
     });
 
+    // --- 4. Merge Products ---
+    const allProductNames = new Set([
+      ...localProducts.map(p => p.name).filter(Boolean),
+      ...remoteProducts.map(p => p.name).filter(Boolean)
+    ]);
+
+    allProductNames.forEach(name => {
+      const localProd = localProducts.find(p => p.name === name);
+      const remoteProd = remoteProducts.find(p => p.name === name);
+
+      let selectedProd = null;
+      if (localProd && remoteProd) {
+        const localTime = new Date(localProd.updatedAt || localProd.createdAt || 0).getTime();
+        const remoteTime = new Date(remoteProd.updatedAt || remoteProd.createdAt || 0).getTime();
+        selectedProd = localTime >= remoteTime ? localProd : remoteProd;
+      } else {
+        selectedProd = localProd || remoteProd;
+      }
+
+      if (selectedProd) {
+        merged.products.push(selectedProd);
+      }
+    });
+
     return merged;
   }
 
@@ -218,12 +245,14 @@ window.Sync = (function () {
     const invoiceItems = await db.invoiceItems.where('invoiceId').anyOf(invoiceIds).toArray();
     const customers = await db.customers.where('userId').equals(userId).toArray();
     const companyProfile = await db.companyProfiles.where('userId').equals(userId).first();
+    const products = await db.products.where('userId').equals(userId).toArray();
 
     return {
       invoices,
       invoiceItems,
       customers,
-      companyProfile: companyProfile || null
+      companyProfile: companyProfile || null,
+      products: products || []
     };
   }
 
@@ -231,7 +260,7 @@ window.Sync = (function () {
    * Save merged dataset into local IndexedDB for a given userId in-place.
    */
   async function saveLocalData(userId, data) {
-    await db.transaction('rw', db.invoices, db.invoiceItems, db.customers, db.companyProfiles, async () => {
+    await db.transaction('rw', db.invoices, db.invoiceItems, db.customers, db.companyProfiles, db.products, async () => {
       // 1. Save Company Profile
       if (data.companyProfile) {
         const existingProfile = await db.companyProfiles.where('userId').equals(userId).first();
@@ -332,6 +361,32 @@ window.Sync = (function () {
           delete itemCopy.id;
           itemCopy.invoiceId = invoiceId;
           await db.invoiceItems.add(itemCopy);
+        }
+      }
+
+      // 4. Save Products
+      const existingProducts = await db.products.where('userId').equals(userId).toArray();
+      const productsToSave = data.products || [];
+
+      for (const prod of productsToSave) {
+        const matched = existingProducts.find(p => p.name === prod.name);
+        
+        const prodDataToSave = {
+          userId: userId,
+          name: prod.name,
+          price: prod.price,
+          description: prod.description || '',
+          createdAt: prod.createdAt || new Date().toISOString(),
+          updatedAt: prod.updatedAt || new Date().toISOString()
+        };
+
+        if (matched) {
+          await db.products.put({
+            ...prodDataToSave,
+            id: matched.id
+          });
+        } else {
+          await db.products.add(prodDataToSave);
         }
       }
     });

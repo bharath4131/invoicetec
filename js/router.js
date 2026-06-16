@@ -18,6 +18,7 @@ window.Router = (function () {
     { pattern: '#/edit/:id',     pageId: 'create-invoice-page',  handler: 'showEditInvoice' },
     { pattern: '#/preview/:id',  pageId: 'preview-invoice-page', handler: 'showPreviewInvoice' },
     { pattern: '#/customers',    pageId: 'customers-page',       handler: 'showCustomers' },
+    { pattern: '#/products',     pageId: 'products-page',        handler: 'showProducts' },
     { pattern: '#/settings',     pageId: 'settings-page',        handler: 'showSettings' }
   ];
 
