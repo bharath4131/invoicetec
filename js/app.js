@@ -24,6 +24,7 @@
         // Set up auth forms
         setupLoginForm();
         setupRegisterForm();
+        setupForgotPassword();
 
         // Set up navigation
         setupNavigation();
@@ -160,6 +161,180 @@
                 btn.innerHTML = '<span>Sign In</span><span>→</span>';
             }
         });
+
+        const googleBtn = document.getElementById('btn-google-login');
+        if (googleBtn) {
+            googleBtn.addEventListener('click', async () => {
+                googleBtn.disabled = true;
+                const originalText = googleBtn.innerHTML;
+                googleBtn.innerHTML = '<span class="spinner"></span> Connecting...';
+                
+                try {
+                    await Auth.loginWithGoogle();
+                    UI.showToast('Logged in with Google!', 'success');
+                    window.location.hash = '#/dashboard';
+                } catch (err) {
+                    UI.showToast(err.message, 'error');
+                } finally {
+                    googleBtn.disabled = false;
+                    googleBtn.innerHTML = originalText;
+                }
+            });
+        }
+    }
+
+    // ─── Forgot Password Flow ─────────────────────────
+    function setupForgotPassword() {
+        const forgotLink = document.getElementById('btn-forgot-password');
+        const modal = document.getElementById('forgot-password-modal-overlay');
+        const closeBtn = document.getElementById('forgot-password-modal-close');
+        
+        const stepEmail = document.getElementById('forgot-step-email');
+        const stepQuestion = document.getElementById('forgot-step-question');
+        const stepReset = document.getElementById('forgot-step-reset');
+        
+        const emailInput = document.getElementById('forgot-email');
+        const answerInput = document.getElementById('forgot-answer');
+        const questionLabel = document.getElementById('forgot-question-label');
+        const newPassInput = document.getElementById('forgot-new-password');
+        const confirmPassInput = document.getElementById('forgot-confirm-password');
+        
+        const btnEmailCancel = document.getElementById('btn-forgot-email-cancel');
+        const btnEmailNext = document.getElementById('btn-forgot-email-next');
+        const btnQuestionBack = document.getElementById('btn-forgot-question-back');
+        const btnQuestionNext = document.getElementById('btn-forgot-question-next');
+        const btnResetSubmit = document.getElementById('btn-forgot-reset-submit');
+        
+        let resetEmail = "";
+
+        if (!forgotLink || !modal) return;
+
+        const closeModal = () => {
+            modal.classList.remove('active');
+            stepEmail.style.display = 'block';
+            stepQuestion.style.display = 'none';
+            stepReset.style.display = 'none';
+            emailInput.value = '';
+            answerInput.value = '';
+            newPassInput.value = '';
+            confirmPassInput.value = '';
+            resetEmail = "";
+        };
+
+        forgotLink.addEventListener('click', () => {
+            modal.classList.add('active');
+            stepEmail.style.display = 'block';
+            stepQuestion.style.display = 'none';
+            stepReset.style.display = 'none';
+        });
+
+        closeBtn.addEventListener('click', closeModal);
+        btnEmailCancel.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // Step 1: Submit Email
+        btnEmailNext.addEventListener('click', async () => {
+            const email = emailInput.value.trim();
+            if (!email) {
+                UI.showToast("Please enter your email address.", "warning");
+                return;
+            }
+            btnEmailNext.disabled = true;
+            btnEmailNext.textContent = "Checking...";
+
+            try {
+                const qInfo = await Auth.getSecurityQuestion(email);
+                if (!qInfo) {
+                    UI.showToast("No account found with this email address.", "error");
+                    return;
+                }
+
+                resetEmail = email;
+
+                if (qInfo.isFirebase) {
+                    await Auth.sendPasswordResetEmail(email);
+                    UI.showToast("Cloud account detected! A password reset link has been sent to your email.", "success", 8000);
+                    closeModal();
+                } else {
+                    questionLabel.textContent = `Security Question: ${qInfo.label}`;
+                    stepEmail.style.display = 'none';
+                    stepQuestion.style.display = 'block';
+                    answerInput.value = '';
+                    answerInput.focus();
+                }
+            } catch (err) {
+                UI.showToast(err.message, "error");
+            } finally {
+                btnEmailNext.disabled = false;
+                btnEmailNext.textContent = "Next";
+            }
+        });
+
+        // Step 2: Verify Security Answer
+        btnQuestionBack.addEventListener('click', () => {
+            stepQuestion.style.display = 'none';
+            stepEmail.style.display = 'block';
+        });
+
+        btnQuestionNext.addEventListener('click', async () => {
+            const answer = answerInput.value.trim();
+            if (!answer) {
+                UI.showToast("Please enter your answer.", "warning");
+                return;
+            }
+            btnQuestionNext.disabled = true;
+            btnQuestionNext.textContent = "Verifying...";
+
+            try {
+                const isCorrect = await Auth.verifySecurityAnswer(resetEmail, answer);
+                if (isCorrect) {
+                    UI.showToast("Answer verified successfully!", "success");
+                    stepQuestion.style.display = 'none';
+                    stepReset.style.display = 'block';
+                    newPassInput.value = '';
+                    confirmPassInput.value = '';
+                    newPassInput.focus();
+                } else {
+                    UI.showToast("Incorrect answer. Please try again.", "error");
+                }
+            } catch (err) {
+                UI.showToast(err.message, "error");
+            } finally {
+                btnQuestionNext.disabled = false;
+                btnQuestionNext.textContent = "Verify";
+            }
+        });
+
+        // Step 3: Local Reset Password
+        btnResetSubmit.addEventListener('click', async () => {
+            const newPass = newPassInput.value;
+            const confirmPass = confirmPassInput.value;
+            
+            if (newPass.length < 8) {
+                UI.showToast("Password must be at least 8 characters long.", "warning");
+                return;
+            }
+            if (newPass !== confirmPass) {
+                UI.showToast("Passwords do not match.", "warning");
+                return;
+            }
+            
+            btnResetSubmit.disabled = true;
+            btnResetSubmit.textContent = "Resetting...";
+
+            try {
+                await Auth.resetPasswordLocally(resetEmail, newPass);
+                UI.showToast("Password updated successfully! You can now sign in.", "success");
+                closeModal();
+            } catch (err) {
+                UI.showToast(err.message, "error");
+            } finally {
+                btnResetSubmit.disabled = false;
+                btnResetSubmit.textContent = "Reset Password";
+            }
+        });
     }
 
     // ─── Register Form ────────────────────────────────
@@ -171,12 +346,92 @@
                 emailInput.value = emailInput.value.toLowerCase();
             });
         }
+
+        const passInput = document.getElementById('register-password');
+        const confirmInput = document.getElementById('register-confirm');
+        const strengthContainer = document.getElementById('password-strength-container');
+        const strengthText = document.getElementById('strength-text');
+        const bar1 = document.getElementById('strength-bar-1');
+        const bar2 = document.getElementById('strength-bar-2');
+        const bar3 = document.getElementById('strength-bar-3');
+        const suggestBtn = document.getElementById('btn-suggest-password');
+
+        if (passInput) {
+            passInput.addEventListener('input', () => {
+                const val = passInput.value;
+                if (!val) {
+                    strengthContainer.style.display = 'none';
+                    return;
+                }
+                strengthContainer.style.display = 'block';
+
+                let score = 0;
+                if (val.length >= 8) score++;
+                if (val.length >= 12) score++;
+                if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
+                if (/[0-9]/.test(val)) score++;
+                if (/[^A-Za-z0-9]/.test(val)) score++;
+
+                // Reset bars
+                bar1.style.background = 'var(--bg-tertiary)';
+                bar2.style.background = 'var(--bg-tertiary)';
+                bar3.style.background = 'var(--bg-tertiary)';
+
+                if (score <= 2) {
+                    bar1.style.background = '#ef4444'; // Red
+                    strengthText.textContent = 'Strength: Weak';
+                    strengthText.style.color = '#ef4444';
+                } else if (score <= 4) {
+                    bar1.style.background = '#f59e0b'; // Orange
+                    bar2.style.background = '#f59e0b';
+                    strengthText.textContent = 'Strength: Medium';
+                    strengthText.style.color = '#f59e0b';
+                } else {
+                    bar1.style.background = '#10b981'; // Green
+                    bar2.style.background = '#10b981';
+                    bar3.style.background = '#10b981';
+                    strengthText.textContent = 'Strength: Strong';
+                    strengthText.style.color = '#10b981';
+                }
+            });
+        }
+
+        if (suggestBtn && passInput && confirmInput) {
+            suggestBtn.addEventListener('click', () => {
+                const length = 16;
+                const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
+                let password = "";
+                const randomValues = new Uint32Array(length);
+                crypto.getRandomValues(randomValues);
+                for (let i = 0; i < length; i++) {
+                    password += charset[randomValues[i] % charset.length];
+                }
+                passInput.type = 'text';
+                confirmInput.type = 'text';
+                passInput.value = password;
+                confirmInput.value = password;
+                
+                // Trigger input event to update strength
+                passInput.dispatchEvent(new Event('input'));
+                
+                UI.showToast("Generated a secure password!", "success");
+                
+                // Change back to password input after a delay
+                setTimeout(() => {
+                    passInput.type = 'password';
+                    confirmInput.type = 'password';
+                }, 4000);
+            });
+        }
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('register-name').value.trim();
             const email = document.getElementById('register-email').value.trim();
             const password = document.getElementById('register-password').value;
             const confirm = document.getElementById('register-confirm').value;
+            const question = document.getElementById('register-question').value;
+            const answer = document.getElementById('register-answer').value;
+
             const btn = document.getElementById('register-submit');
 
             if (password !== confirm) {
@@ -188,7 +443,7 @@
             btn.innerHTML = '<span class="spinner"></span> Creating account...';
 
             try {
-                const res = await Auth.register(name, email, password);
+                const res = await Auth.register(name, email, password, question, answer);
                 if (res && res.emailVerificationRequired) {
                     UI.showToast('Account registered! Please check your email to verify your account before logging in.', 'warning', 10000);
                     form.reset();

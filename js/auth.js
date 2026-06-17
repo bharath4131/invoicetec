@@ -70,7 +70,7 @@ window.Auth = {
    * @param {string} password
    * @returns {Promise<Object|number>} The new user's id or registration result object.
    */
-  async register(name, email, password) {
+  async register(name, email, password, securityQuestion = '', securityAnswer = '') {
     try {
       // --- Validation ---
       if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -83,8 +83,11 @@ window.Auth = {
       if (!emailRegex.test(email.trim())) {
         throw new Error('Please enter a valid email address.');
       }
-      if (!password || typeof password !== 'string' || password.length < 6) {
-        throw new Error('Password must be at least 6 characters long.');
+      if (!password || typeof password !== 'string' || password.length < 8) {
+        throw new Error('Password must be at least 8 characters long.');
+      }
+      if (!securityQuestion || !securityAnswer || securityAnswer.trim().length === 0) {
+        throw new Error('Security question and answer are required for recovery.');
       }
 
       // --- Firebase Sign Up if Enabled ---
@@ -108,9 +111,15 @@ window.Auth = {
             let existingUser = users.find(u => u.email.trim().toLowerCase() === email.trim().toLowerCase() || (u.supabaseId && u.supabaseId === user.uid));
             let localUserId;
 
+            var tempSalt = crypto.getRandomValues(new Uint8Array(16));
+            var tempHashed = await this.hashPassword(securityAnswer.trim().toLowerCase(), tempSalt);
+
             if (existingUser) {
               existingUser.supabaseId = user.uid;
               existingUser.name = name.trim();
+              existingUser.securityQuestion = securityQuestion;
+              existingUser.salt = this.bufferToHex(tempSalt);
+              existingUser.securityAnswerHash = this.bufferToHex(tempHashed);
               await db.users.put(existingUser);
               localUserId = existingUser.id;
             } else {
@@ -118,6 +127,9 @@ window.Auth = {
                 name: name.trim(),
                 email: email.trim().toLowerCase(),
                 supabaseId: user.uid,
+                securityQuestion: securityQuestion,
+                salt: this.bufferToHex(tempSalt),
+                securityAnswerHash: this.bufferToHex(tempHashed),
                 createdAt: new Date().toISOString()
               });
             }
@@ -148,7 +160,7 @@ window.Auth = {
             if (err.code === 'auth/email-already-in-use') {
               throw new Error('An account with this email already exists.');
             } else if (err.code === 'auth/weak-password') {
-              throw new Error('Password must be at least 6 characters long.');
+              throw new Error('Password must be at least 8 characters long.');
             } else if (err.code === 'auth/invalid-email') {
               throw new Error('Please enter a valid email address.');
             } else {
@@ -167,12 +179,15 @@ window.Auth = {
 
       var salt = crypto.getRandomValues(new Uint8Array(16));
       var hashedPassword = await this.hashPassword(password, salt);
+      var hashedAnswer = await this.hashPassword(securityAnswer.trim().toLowerCase(), salt);
 
       var userId = await db.users.add({
         name: name.trim(),
         email: email.trim().toLowerCase(),
         passwordHash: this.bufferToHex(hashedPassword),
         salt: this.bufferToHex(salt),
+        securityQuestion: securityQuestion,
+        securityAnswerHash: this.bufferToHex(hashedAnswer),
         createdAt: new Date().toISOString()
       });
 
@@ -300,6 +315,74 @@ window.Auth = {
       return session;
     } catch (error) {
       throw error;
+    }
+  },
+
+  /**
+   * Log in via Google provider.
+   */
+  async loginWithGoogle() {
+    if (!window.Sync || !Sync.isEnabled()) {
+      throw new Error('Google Login requires Cloud Sync. Please configure and enable Firebase in Settings first.');
+    }
+    
+    const client = Sync.getClient();
+    if (!client) {
+      throw new Error('Firebase client failed to initialize. Please check your config in Settings.');
+    }
+
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      const result = await client.auth().signInWithPopup(provider);
+      const user = result.user;
+
+      // Match or create local user
+      let users = await db.users.toArray();
+      let existingUser = users.find(u => u.email.trim().toLowerCase() === user.email.trim().toLowerCase() || (u.supabaseId && u.supabaseId === user.uid));
+      let localUserId;
+
+      if (existingUser) {
+        existingUser.supabaseId = user.uid;
+        if (user.displayName) {
+          existingUser.name = user.displayName;
+        }
+        await db.users.put(existingUser);
+        localUserId = existingUser.id;
+      } else {
+        localUserId = await db.users.add({
+          name: user.displayName || 'Google User',
+          email: user.email.toLowerCase(),
+          supabaseId: user.uid,
+          createdAt: new Date().toISOString()
+        });
+      }
+
+      const oldUser = this.getCurrentUser();
+      const oldUserId = oldUser ? oldUser.id : null;
+
+      // Store session
+      var session = {
+        id: localUserId,
+        name: user.displayName || (existingUser ? existingUser.name : 'Google User'),
+        email: user.email.toLowerCase(),
+        supabaseId: user.uid
+      };
+      sessionStorage.setItem('currentUser', JSON.stringify(session));
+
+      // Migrate offline data
+      await this.migrateLocalDataToUser(localUserId, oldUserId);
+
+      // Pull & Sync
+      try {
+        await Sync.pull(localUserId);
+      } catch (syncErr) {
+        console.error('Initial sync pull on Google login failed:', syncErr);
+      }
+
+      return session;
+    } catch (err) {
+      console.error('Google Sign-In failed:', err);
+      throw new Error(err.message);
     }
   },
 
@@ -434,6 +517,81 @@ window.Auth = {
         console.error('Firebase signOut during account deletion failed:', err);
       }
     }
+  },
+
+  SECURITY_QUESTIONS: {
+    pet: "What was the name of your first pet?",
+    city: "In what city were you born?",
+    friend: "What is the name of your childhood best friend?",
+    school: "What was the name of your primary school?"
+  },
+
+  /**
+   * Get the registered security question for a local user.
+   */
+  async getSecurityQuestion(email) {
+    const emailLower = email.trim().toLowerCase();
+    const users = await db.users.toArray();
+    const user = users.find(u => u.email.toLowerCase() === emailLower);
+    if (!user) return null;
+    
+    if (user.supabaseId) {
+      return { isFirebase: true };
+    }
+    
+    if (!user.securityQuestion) return null;
+    const questionLabel = this.SECURITY_QUESTIONS[user.securityQuestion] || "Security verification question";
+    return {
+      question: user.securityQuestion,
+      label: questionLabel
+    };
+  },
+
+  /**
+   * Verify the security answer for a local user.
+   */
+  async verifySecurityAnswer(email, answer) {
+    const emailLower = email.trim().toLowerCase();
+    const users = await db.users.toArray();
+    const user = users.find(u => u.email.toLowerCase() === emailLower);
+    if (!user || !user.securityAnswerHash || !user.salt) return false;
+    
+    const salt = this.hexToBuffer(user.salt);
+    const hashed = await this.hashPassword(answer.trim().toLowerCase(), salt);
+    return this.bufferToHex(hashed) === user.securityAnswerHash;
+  },
+
+  /**
+   * Reset the password locally in IndexedDB.
+   */
+  async resetPasswordLocally(email, newPassword) {
+    const emailLower = email.trim().toLowerCase();
+    const users = await db.users.toArray();
+    const user = users.find(u => u.email.toLowerCase() === emailLower);
+    if (!user) throw new Error('User not found.');
+
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const hashedPassword = await this.hashPassword(newPassword, salt);
+
+    user.passwordHash = this.bufferToHex(hashedPassword);
+    user.salt = this.bufferToHex(salt);
+    
+    await db.users.put(user);
+    return true;
+  },
+
+  /**
+   * Send a Firebase password reset email.
+   */
+  async sendPasswordResetEmail(email) {
+    if (window.Sync && Sync.isEnabled()) {
+      const client = Sync.getClient();
+      if (client) {
+        await client.auth().sendPasswordResetEmail(email.trim().toLowerCase());
+        return true;
+      }
+    }
+    return false;
   },
 
   /**

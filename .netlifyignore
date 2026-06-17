@@ -1,0 +1,7 @@
+# Exclude database scripts and config directories from Netlify deployments
+database/
+.git/
+.gitignore
+.vscode/
+.netlify/
+README.md

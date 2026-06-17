@@ -286,12 +286,29 @@
                         <input type="email" id="login-email" class="form-input" placeholder="you@example.com" required autocomplete="email">
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="login-password">Password</label>
-                        <input type="password" id="login-password" class="form-input" placeholder="Enter your password" required minlength="6" autocomplete="current-password">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <label class="form-label" for="login-password" style="margin: 0;">Password</label>
+                            <a href="javascript:void(0)" id="btn-forgot-password" style="font-size: 0.75rem; color: var(--accent-primary); text-decoration: none; font-weight: 500;">Forgot Password?</a>
+                        </div>
+                        <input type="password" id="login-password" class="form-input" placeholder="Enter your password" required minlength="8" autocomplete="current-password">
                     </div>
                     <button type="submit" class="btn btn-primary auth-submit" id="login-submit">
                         <span>Sign In</span>
                         <span>→</span>
+                    </button>
+                    <div style="text-align: center; margin: 16px 0; color: var(--text-tertiary); font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
+                        <span>OR</span>
+                        <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
+                    </div>
+                    <button type="button" class="btn btn-secondary" id="btn-google-login" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; height: 42px; font-weight: 500; background: var(--bg-secondary); border: 1px solid var(--border-color);">
+                        <svg width="18" height="18" viewBox="0 0 18 18">
+                            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+                            <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+                            <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.896 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                        </svg>
+                        <span>Sign In with Google</span>
                     </button>
                 </form>
 
@@ -306,12 +323,39 @@
                         <input type="email" id="register-email" class="form-input" placeholder="you@example.com" required autocomplete="email">
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="register-password">Password</label>
-                        <input type="password" id="register-password" class="form-input" placeholder="Min 6 characters" required minlength="6" autocomplete="new-password">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <label class="form-label" for="register-password" style="margin: 0;">Password *</label>
+                            <button type="button" class="btn btn-secondary btn-sm" id="btn-suggest-password" style="padding: 4px 8px; font-size: 0.75rem; height: auto;">
+                                🔑 Suggest Strong
+                            </button>
+                        </div>
+                        <input type="password" id="register-password" class="form-input" placeholder="Min 8 characters" required minlength="8" autocomplete="new-password">
+                        <div id="password-strength-container" style="margin-top: 8px; display: none;">
+                            <div style="display: flex; gap: 4px; height: 6px; width: 100%; border-radius: 3px; background: var(--bg-tertiary); overflow: hidden;">
+                                <div id="strength-bar-1" style="flex: 1; height: 100%; transition: background var(--transition-normal);"></div>
+                                <div id="strength-bar-2" style="flex: 1; height: 100%; transition: background var(--transition-normal);"></div>
+                                <div id="strength-bar-3" style="flex: 1; height: 100%; transition: background var(--transition-normal);"></div>
+                            </div>
+                            <span id="strength-text" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px; display: block;">Strength: Weak</span>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="register-confirm">Confirm Password</label>
-                        <input type="password" id="register-confirm" class="form-input" placeholder="Repeat your password" required minlength="6" autocomplete="new-password">
+                        <input type="password" id="register-confirm" class="form-input" placeholder="Repeat your password" required minlength="8" autocomplete="new-password">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="register-question">Security Question (For offline password recovery)</label>
+                        <select id="register-question" class="form-input form-select" required>
+                            <option value="">-- Select a Question --</option>
+                            <option value="pet">What was the name of your first pet?</option>
+                            <option value="city">In what city were you born?</option>
+                            <option value="friend">What is the name of your childhood best friend?</option>
+                            <option value="school">What was the name of your primary school?</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="register-answer">Security Answer *</label>
+                        <input type="text" id="register-answer" class="form-input" placeholder="Enter answer here (case-insensitive)" required autocomplete="off">
                     </div>
                     <button type="submit" class="btn btn-primary auth-submit" id="register-submit">
                         <span>Create Account</span>
@@ -1326,6 +1370,61 @@
                     <button type="submit" class="btn btn-primary" id="product-modal-save">Save Item</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- FORGOT PASSWORD MODAL -->
+    <div class="modal-overlay" id="forgot-password-modal-overlay">
+        <div class="modal" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+                    <span>🔒</span> Reset Password
+                </h3>
+                <button class="btn btn-icon modal-close" id="forgot-password-modal-close">✕</button>
+            </div>
+            <div class="modal-body" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-primary);">
+                <!-- Step 1: Request Email -->
+                <div id="forgot-step-email">
+                    <p style="margin-bottom: 16px; color: var(--text-secondary);">Enter your account email to start the password recovery process.</p>
+                    <div class="form-group">
+                        <label class="form-label" for="forgot-email">Email Address</label>
+                        <input type="email" id="forgot-email" class="form-input" placeholder="you@example.com" required>
+                    </div>
+                    <div class="modal-footer" style="padding-top: 12px; margin-top: 16px;">
+                        <button type="button" class="btn btn-secondary" id="btn-forgot-email-cancel">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="btn-forgot-email-next">Next</button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Local Verification (Security Question) -->
+                <div id="forgot-step-question" style="display: none;">
+                    <p style="margin-bottom: 16px; color: var(--text-secondary);">Please answer the security question you set during registration.</p>
+                    <div class="form-group">
+                        <label class="form-label" style="font-weight: 600;" id="forgot-question-label">Security Question</label>
+                        <input type="text" id="forgot-answer" class="form-input" placeholder="Your answer" required>
+                    </div>
+                    <div class="modal-footer" style="padding-top: 12px; margin-top: 16px;">
+                        <button type="button" class="btn btn-secondary" id="btn-forgot-question-back">Back</button>
+                        <button type="button" class="btn btn-primary" id="btn-forgot-question-next">Verify</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Local Reset Password -->
+                <div id="forgot-step-reset" style="display: none;">
+                    <p style="margin-bottom: 16px; color: var(--text-secondary);">Verification successful! Please choose a new strong password.</p>
+                    <div class="form-group">
+                        <label class="form-label" for="forgot-new-password">New Password</label>
+                        <input type="password" id="forgot-new-password" class="form-input" placeholder="Min 8 characters" required minlength="8">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="forgot-confirm-password">Confirm Password</label>
+                        <input type="password" id="forgot-confirm-password" class="form-input" placeholder="Repeat new password" required minlength="8">
+                    </div>
+                    <div class="modal-footer" style="padding-top: 12px; margin-top: 16px;">
+                        <button type="button" class="btn btn-primary" id="btn-forgot-reset-submit" style="width: 100%;">Reset Password</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

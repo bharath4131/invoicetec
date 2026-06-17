@@ -1,0 +1,8 @@
+# Exclude database scripts and config directories from Vercel deployments
+database/
+.git/
+.gitignore
+.vscode/
+.netlify/
+.netlifyignore
+README.md
