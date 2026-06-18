@@ -18,6 +18,19 @@
         // Initialize theme
         UI.initTheme();
 
+        // Register PWA Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(function (reg) {
+                        console.log('Service Worker registered successfully with scope:', reg.scope);
+                    })
+                    .catch(function (err) {
+                        console.error('Service Worker registration failed:', err);
+                    });
+            });
+        }
+
         // Set up auth tab switching
         setupAuthTabs();
 

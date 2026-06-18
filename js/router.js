@@ -22,6 +22,49 @@ window.Router = (function () {
     { pattern: '#/settings',     pageId: 'settings-page',        handler: 'showSettings' }
   ];
 
+  var routeMeta = {
+    '#/landing': {
+      title: 'InvoiceFlow — Professional Invoice Generator',
+      desc: 'Create, manage, and download beautiful invoices as PDF. Free, fast, and fully private.'
+    },
+    '#/login': {
+      title: 'Sign In | InvoiceFlow',
+      desc: 'Access your InvoiceFlow dashboard, sign in with email or Google, and manage your invoices.'
+    },
+    '#/dashboard': {
+      title: 'Dashboard | InvoiceFlow',
+      desc: 'Analyze monthly earnings, check top clients, and see recent activity trends in your dashboard.'
+    },
+    '#/invoices': {
+      title: 'Manage Invoices | InvoiceFlow',
+      desc: 'View your invoices, filter by status, and create new client billing bills.'
+    },
+    '#/create': {
+      title: 'New Invoice | InvoiceFlow',
+      desc: 'Draft a new professional invoice using customizable layouts and dynamic currencies.'
+    },
+    '#/edit/:id': {
+      title: 'Edit Invoice | InvoiceFlow',
+      desc: 'Modify invoice details, edit line items, and adjust taxes or discounts.'
+    },
+    '#/preview/:id': {
+      title: 'Preview Invoice | InvoiceFlow',
+      desc: 'Preview the print-ready PDF invoice template, download it locally, or share it.'
+    },
+    '#/customers': {
+      title: 'Client Directory | InvoiceFlow',
+      desc: 'Manage your customer list, billing addresses, contact details, and transactions.'
+    },
+    '#/products': {
+      title: 'Product Catalog | InvoiceFlow',
+      desc: 'Manage your catalog items, standard prices, and barcode associations.'
+    },
+    '#/settings': {
+      title: 'Settings | InvoiceFlow',
+      desc: 'Configure company profile, invoice default currencies, tax defaults, and Cloud Sync.'
+    }
+  };
+
   // ── Helpers ──────────────────────────────────────────────────
 
   /**
@@ -130,6 +173,14 @@ window.Router = (function () {
 
     // Show the target page panel
     showPage(matched.pageId);
+
+    // Update Document Title and Meta Description for SEO
+    var meta = routeMeta[matched.pattern] || routeMeta['#/landing'];
+    document.title = meta.title;
+    var metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', meta.desc);
+    }
 
     // Call the handler function from app.js (e.g., window.showDashboard)
     var handlerFn = window[matched.handler];
