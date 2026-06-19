@@ -322,24 +322,10 @@ window.Sync = (function () {
         const localCustomerId = inv.customerId ? (customerIdMap.get(inv.customerId) || null) : null;
 
         const invoiceDataToSave = {
+          ...inv,
           userId: userId,
           customerId: localCustomerId,
-          invoiceNumber: inv.invoiceNumber,
-          date: inv.date,
-          dueDate: inv.dueDate,
-          status: inv.status,
-          notes: inv.notes,
-          terms: inv.terms,
-          discountType: inv.discountType,
-          discountValue: inv.discountValue,
-          taxType: inv.taxType,
-          taxValue: inv.taxValue,
-          subtotal: inv.subtotal,
-          total: inv.total,
-          currency: inv.currency,
-          templateId: inv.templateId,
-          createdAt: inv.createdAt,
-          updatedAt: inv.updatedAt || inv.createdAt
+          updatedAt: inv.updatedAt || inv.createdAt || new Date().toISOString()
         };
 
         if (matched) {
@@ -349,7 +335,9 @@ window.Sync = (function () {
             id: invoiceId
           });
         } else {
-          invoiceId = await db.invoices.add(invoiceDataToSave);
+          const invCopy = { ...invoiceDataToSave };
+          delete invCopy.id;
+          invoiceId = await db.invoices.add(invCopy);
         }
 
         // Delete old items for this invoiceId and re-add from snapshot

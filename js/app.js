@@ -85,15 +85,12 @@
                                 supabaseId: firebaseUser.uid
                             };
                             
-                            const currentUser = Auth.getCurrentUser();
-                            if (!currentUser || currentUser.email !== sessionObj.email) {
-                                sessionStorage.setItem('currentUser', JSON.stringify(sessionObj));
-                                try {
-                                    await Sync.pull(localUserId);
-                                    Router.navigate(window.location.pathname);
-                                } catch (syncErr) {
-                                    console.error('Initial sync pull on auto-restore failed:', syncErr);
-                                }
+                            sessionStorage.setItem('currentUser', JSON.stringify(sessionObj));
+                            try {
+                                await Sync.pull(localUserId);
+                                Router.navigate(window.location.pathname);
+                            } catch (syncErr) {
+                                console.error('Initial sync pull on auto-restore failed:', syncErr);
                             }
                         }
                     });
