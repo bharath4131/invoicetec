@@ -16,6 +16,9 @@ window.UI = (function () {
 
   function showToast(message, type) {
     type = type || 'success';
+    if (typeof message === 'string') {
+      message = message.replace(/firebase/gi, 'Cloud Database');
+    }
 
     // Ensure container exists
     var container = document.querySelector('.toast-container');

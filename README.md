@@ -1,6 +1,6 @@
-# InvoiceFlow — Modern Invoice Generator
+# InvoiceTec — Modern Invoice Generator
 
-InvoiceFlow is a premium, fully-featured, client-side Single Page Application (SPA) designed to help freelancers, contractors, and small business owners create, manage, and share professional invoices in seconds. It operates entirely inside the browser using IndexedDB for local data storage, ensuring 100% data privacy and speed.
+InvoiceTec is a premium, fully-featured, client-side Single Page Application (SPA) designed to help freelancers, contractors, and small business owners create, manage, and share professional invoices in seconds. It operates entirely inside the browser using IndexedDB for local data storage, ensuring 100% data privacy and speed.
 
 ---
 

@@ -13,6 +13,12 @@
   status = 404
   force = true
 
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
+
 [[headers]]
   for = "/*"
   [headers.values]

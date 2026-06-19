@@ -33,5 +33,19 @@
       "destination": "/index.html",
       "permanent": false
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/(landing|login|dashboard|invoices|create|customers|products|settings)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/edit/:id",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/preview/:id",
+      "destination": "/index.html"
+    }
   ]
 }

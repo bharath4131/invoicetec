@@ -601,7 +601,7 @@ window.Auth = {
   requireAuth() {
     var user = this.getCurrentUser();
     if (!user) {
-      window.location.hash = '#/login';
+      Router.go('/login');
       return null;
     }
     return user;

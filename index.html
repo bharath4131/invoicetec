@@ -18,14 +18,14 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://invoicetec.vercel.app/">
-    <meta property="og:title" content="InvoiceFlow — Professional Invoice Generator">
+    <meta property="og:title" content="InvoiceTec — Professional Invoice Generator">
     <meta property="og:description" content="Create, manage, and download beautiful invoices as PDF. Free, fast, and fully private.">
     <meta property="og:image" content="https://invoicetec.vercel.app/icon-512.png">
 
     <!-- Twitter Cards -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://invoicetec.vercel.app/">
-    <meta property="twitter:title" content="InvoiceFlow — Professional Invoice Generator">
+    <meta property="twitter:title" content="InvoiceTec — Professional Invoice Generator">
     <meta property="twitter:description" content="Create, manage, and download beautiful invoices as PDF. Free, fast, and fully private.">
     <meta property="twitter:image" content="https://invoicetec.vercel.app/icon-512.png">
 
@@ -34,7 +34,7 @@
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      "name": "InvoiceFlow",
+      "name": "InvoiceTec",
       "url": "https://invoicetec.vercel.app/",
       "description": "Create, manage, and download beautiful invoices as PDF. Free, fast, and fully private.",
       "applicationCategory": "BusinessApplication",
@@ -47,7 +47,7 @@
     }
     </script>
 
-    <title>InvoiceFlow — Professional Invoice Generator</title>
+    <title>InvoiceTec — Professional Invoice Generator</title>
 
     <!-- DNS Preconnect and Hints -->
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
@@ -76,9 +76,9 @@
     <div id="landing-page" class="page" style="display: none;">
         <!-- Header -->
         <header class="landing-header">
-            <a href="#/landing" class="landing-brand">
+            <a href="/landing" class="landing-brand">
                 <span class="landing-brand-icon">📄</span>
-                <span>InvoiceFlow</span>
+                <span>InvoiceTec</span>
             </a>
             <nav class="landing-nav">
                 <a href="#landing-features" class="landing-nav-link">Features</a>
@@ -88,8 +88,8 @@
                 <a href="#landing-contact" class="landing-nav-link">Contact</a>
             </nav>
             <div class="landing-auth-btn">
-                <a href="#/login" class="btn btn-secondary btn-sm" id="landing-signin-btn">Sign In</a>
-                <a href="#/login?tab=register" class="btn btn-primary btn-sm" id="landing-signup-btn">Get Started</a>
+                <a href="/login" class="btn btn-secondary btn-sm" id="landing-signin-btn">Sign In</a>
+                <a href="/login?tab=register" class="btn btn-primary btn-sm" id="landing-signup-btn">Get Started</a>
             </div>
         </header>
 
@@ -97,9 +97,9 @@
         <section class="landing-hero">
             <div class="landing-hero-badge">🔒 Local-First & Private</div>
             <h1 class="landing-hero-title">Create Beautiful Invoices <span>Instantly</span></h1>
-            <p class="landing-hero-desc">InvoiceFlow is a professional invoice generator built for freelancers, agencies, and small businesses. Create, manage, and download PDF invoices securely—all from your browser.</p>
+            <p class="landing-hero-desc">InvoiceTec is a professional invoice generator built for freelancers, agencies, and small businesses. Create, manage, and download PDF invoices securely—all from your browser.</p>
             <div class="landing-hero-ctas">
-                <a href="#/login?tab=register" class="btn btn-primary" id="landing-hero-primary-btn" style="padding: 12px 28px; font-size: 1.05rem;">Start Generating Free</a>
+                <a href="/login?tab=register" class="btn btn-primary" id="landing-hero-primary-btn" style="padding: 12px 28px; font-size: 1.05rem;">Start Generating Free</a>
                 <a href="#landing-features" class="btn btn-secondary" style="padding: 12px 28px; font-size: 1.05rem;">Explore Features</a>
             </div>
         </section>
@@ -182,20 +182,63 @@
             </div>
         </section>
 
+        <!-- Testimonials Section -->
+        <section class="landing-section" id="landing-testimonials">
+            <div class="landing-section-header">
+                <h2 class="landing-section-title">Trusted by Freelancers & Agencies</h2>
+                <p class="landing-section-desc">See why thousands of independent professionals rely on InvoiceTec to bill their clients with ease and confidence.</p>
+            </div>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <p class="testimonial-text">"As a privacy-focused developer, I love that my clients' rates and invoices never touch a third-party server. It's incredibly fast, and generating PDFs takes seconds. Truly local-first!"</p>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">A</div>
+                        <div class="testimonial-info">
+                            <span class="testimonial-name">Alex Rivera</span>
+                            <span class="testimonial-role">Independent Software Consultant</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <p class="testimonial-text">"We migrated our billing from a costly monthly tool to InvoiceTec. The currency flexibility and template options make our billing look extremely professional. Best move we've made!"</p>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">S</div>
+                        <div class="testimonial-info">
+                            <span class="testimonial-name">Sarah Chen</span>
+                            <span class="testimonial-role">Director, Studio Pixel Creative Agency</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <p class="testimonial-text">"The offline functionality is a lifesaver. I can draft invoices during flights or site visits, export my local database as a backup, and manage clients seamlessly. Excellent utility."</p>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">M</div>
+                        <div class="testimonial-info">
+                            <span class="testimonial-name">Marcus Vance</span>
+                            <span class="testimonial-role">Contract Photographer & Editor</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- FAQ Section -->
         <section class="landing-section" id="landing-faq">
             <div class="landing-section-header">
                 <h2 class="landing-section-title">Frequently Asked Questions</h2>
-                <p class="landing-section-desc">Have questions about InvoiceFlow? Here are answers to the most common queries.</p>
+                <p class="landing-section-desc">Have questions about InvoiceTec? Here are answers to the most common queries.</p>
             </div>
             <div class="faq-container">
                 <div class="faq-card">
                     <div class="faq-question-row">
-                        <span>Is InvoiceFlow completely free to use?</span>
+                        <span>Is InvoiceTec completely free to use?</span>
                         <span class="faq-icon">▼</span>
                     </div>
                     <div class="faq-answer">
-                        Yes! InvoiceFlow is a 100% free tool. There are no monthly subscriptions, paywalls, or limits on the number of invoices or customers you can manage.
+                        Yes! InvoiceTec is a 100% free tool. There are no monthly subscriptions, paywalls, or limits on the number of invoices or customers you can manage.
                     </div>
                 </div>
                 <div class="faq-card">
@@ -231,12 +274,12 @@
         <!-- About Us Section -->
         <section class="landing-section" id="landing-about">
             <div class="landing-section-header">
-                <h2 class="landing-section-title">About InvoiceFlow</h2>
+                <h2 class="landing-section-title">About InvoiceTec</h2>
                 <p class="landing-section-desc">Learn about the philosophy, architecture, and team behind the platform.</p>
             </div>
             <div class="about-card">
                 <h3>Our Mission: Privacy First Invoicing</h3>
-                <p>InvoiceFlow was founded with a simple belief: billing tools shouldn't harvest your sensitive business data. Traditional online invoice builders require you to upload your client lists, rate sheets, and revenue details to their servers. We designed a modern, local-first alternative.</p>
+                <p>InvoiceTec was founded with a simple belief: billing tools shouldn't harvest your sensitive business data. Traditional online invoice builders require you to upload your client lists, rate sheets, and revenue details to their servers. We designed a modern, local-first alternative.</p>
                 <p>By using modern browser technologies like Dexie.js (IndexedDB) and client-side PDF compilers (pdfmake), we ensure all compute and database storage occurs entirely on your device. This architecture provides near-instant loading times, offline usability, and absolute privacy for your business operations.</p>
             </div>
         </section>
@@ -271,9 +314,9 @@
         <footer class="landing-footer">
             <div class="footer-content">
                 <div class="footer-brand-side">
-                    <a href="#/landing" class="landing-brand">
+                    <a href="/landing" class="landing-brand">
                         <span class="landing-brand-icon">📄</span>
-                        <span>InvoiceFlow</span>
+                        <span>InvoiceTec</span>
                     </a>
                     <p class="footer-desc">Professional invoicing made simple, fast, and completely private. All data is kept secure on your local device.</p>
                 </div>
@@ -297,7 +340,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <span>© 2026 InvoiceFlow. All rights reserved.</span>
+                <span>© 2026 InvoiceTec. All rights reserved.</span>
                 <span>Designed for privacy.</span>
             </div>
         </footer>
@@ -311,7 +354,7 @@
             <div class="auth-card">
                 <div class="auth-logo">
                     <div class="auth-logo-icon">📄</div>
-                    <h1>InvoiceFlow</h1>
+                    <h1>InvoiceTec</h1>
                     <p>Professional invoicing made simple</p>
                 </div>
 
@@ -329,7 +372,7 @@
                     <div class="form-group">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <label class="form-label" for="login-password" style="margin: 0;">Password</label>
-                            <a href="javascript:void(0)" id="btn-forgot-password" style="font-size: 0.75rem; color: var(--accent-primary); text-decoration: none; font-weight: 500;">Forgot Password?</a>
+                            <button type="button" id="btn-forgot-password" style="background: none; border: none; padding: 0; cursor: pointer; font-family: inherit; font-size: 0.75rem; color: var(--accent-primary); text-decoration: none; font-weight: 500;">Forgot Password?</button>
                         </div>
                         <input type="password" id="login-password" class="form-input" placeholder="Enter your password" required minlength="8" autocomplete="current-password">
                     </div>
@@ -407,7 +450,7 @@
                 <div class="auth-footer">
                     <p class="auth-footer-text">Your data stays private — stored only in your browser.</p>
                     <p class="auth-footer-text" style="margin-top: 8px;">
-                        <a href="javascript:void(0)" id="auth-privacy-link" style="color: var(--accent-primary); text-decoration: none; font-weight: 500;">Privacy Policy</a>
+                        <button type="button" id="auth-privacy-link" style="background: none; border: none; padding: 0; cursor: pointer; font-family: inherit; color: var(--accent-primary); text-decoration: none; font-weight: 500;">Privacy Policy</button>
                     </p>
                 </div>
             </div>
@@ -426,34 +469,34 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-brand">
                 <span class="sidebar-brand-icon">📄</span>
-                <span class="sidebar-brand-text">InvoiceFlow</span>
+                <span class="sidebar-brand-text">InvoiceTec</span>
             </div>
 
             <nav class="sidebar-nav">
                 <div class="nav-section-label">MAIN</div>
-                <a class="nav-item active" data-route="#/dashboard" id="nav-dashboard">
+                <a class="nav-item active" data-route="/dashboard" id="nav-dashboard">
                     <span class="nav-icon">📊</span>
                     <span>Dashboard</span>
                 </a>
-                <a class="nav-item" data-route="#/invoices" id="nav-invoices">
+                <a class="nav-item" data-route="/invoices" id="nav-invoices">
                     <span class="nav-icon">📄</span>
                     <span>Invoices</span>
                 </a>
-                <a class="nav-item" data-route="#/create" id="nav-create">
+                <a class="nav-item" data-route="/create" id="nav-create">
                     <span class="nav-icon">✏️</span>
                     <span>New Invoice</span>
                 </a>
-                <a class="nav-item" data-route="#/customers" id="nav-customers">
+                <a class="nav-item" data-route="/customers" id="nav-customers">
                     <span class="nav-icon">👥</span>
                     <span>Customers</span>
                 </a>
-                <a class="nav-item" data-route="#/products" id="nav-products">
+                <a class="nav-item" data-route="/products" id="nav-products">
                     <span class="nav-icon">📦</span>
                     <span>Products & Services</span>
                 </a>
 
                 <div class="nav-section-label" style="margin-top: 24px;">SETTINGS</div>
-                <a class="nav-item" data-route="#/settings" id="nav-settings">
+                <a class="nav-item" data-route="/settings" id="nav-settings">
                     <span class="nav-icon">⚙️</span>
                     <span>Settings</span>
                 </a>
@@ -468,7 +511,7 @@
                     </div>
                 </div>
                 <div style="text-align: center; border-top: 1px solid var(--border-color); padding-top: 8px;">
-                    <a href="javascript:void(0)" id="sidebar-privacy-link" style="color: var(--text-tertiary); text-decoration: none; font-size: 0.75rem; font-weight: 500; transition: color var(--transition-fast);">Privacy Policy</a>
+                    <button type="button" id="sidebar-privacy-link" style="background: none; border: none; padding: 0; cursor: pointer; font-family: inherit; color: var(--text-tertiary); text-decoration: none; font-size: 0.75rem; font-weight: 500; transition: color var(--transition-fast);">Privacy Policy</button>
                 </div>
             </div>
         </aside>
@@ -490,7 +533,7 @@
                             <span class="dropdown-arrow">▾</span>
                         </button>
                         <div class="dropdown-menu">
-                            <a class="dropdown-item" data-route="#/settings" id="menu-settings">
+                            <a class="dropdown-item" data-route="/settings" id="menu-settings">
                                 <span>⚙️</span>
                                 <span>Settings</span>
                             </a>
@@ -1159,25 +1202,26 @@
                         </div>
 
                         <!-- Account & Legal Panel -->
-                        <div class="settings-tab-panel" id="settings-tab-account" style="display: none; display: flex; flex-direction: column; gap: 24px;">
+                        <div class="settings-tab-panel" id="settings-tab-account" style="display: none; flex-direction: column; gap: 24px;">
                             <!-- Account -->
                             <div class="card settings-section">
-                            <h3 class="invoice-section-title">
-                                <span>👤</span> Account
-                            </h3>
-                            <div class="account-info">
-                                <p><strong>Name:</strong> <span id="settings-user-name">-</span></p>
-                                <p><strong>Email:</strong> <span id="settings-user-email">-</span></p>
-                            </div>
-                            <div style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
-                                <button class="btn btn-secondary" id="settings-logout-btn" style="margin-top: 0;">
-                                    <span>🚪</span>
-                                    <span>Sign Out</span>
-                                </button>
-                                <button class="btn btn-danger" id="delete-account-btn" style="margin-top: 0; background: var(--bg-primary); color: #ef4444; border: 1px dashed #ef4444;">
-                                    <span>⚠️</span>
-                                    <span>Delete Account</span>
-                                </button>
+                                <h3 class="invoice-section-title">
+                                    <span>👤</span> Account
+                                </h3>
+                                <div class="account-info">
+                                    <p><strong>Name:</strong> <span id="settings-user-name">-</span></p>
+                                    <p><strong>Email:</strong> <span id="settings-user-email">-</span></p>
+                                </div>
+                                <div style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
+                                    <button class="btn btn-secondary" id="settings-logout-btn" style="margin-top: 0;">
+                                        <span>🚪</span>
+                                        <span>Sign Out</span>
+                                    </button>
+                                    <button class="btn btn-danger" id="delete-account-btn" style="margin-top: 0; background: var(--bg-primary); color: #ef4444; border: 1px dashed #ef4444;">
+                                        <span>⚠️</span>
+                                        <span>Delete Account</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -1224,7 +1268,7 @@
                         <!-- Cloud Database Sync (Firebase) -->
                         <div class="card settings-section settings-tab-panel" id="settings-tab-sync" style="display: none;">
                             <h3 class="invoice-section-title">
-                                <span>🌐</span> Cloud Database Sync (Firebase)
+                                <span>🌐</span> Cloud Database Sync
                             </h3>
                             <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 0.9rem;">
                                 Synchronize and access your invoices, customers, and business data securely across multiple devices using your account credentials.
@@ -1243,7 +1287,7 @@
                                 <!-- Collapsible Advanced Settings (Optional custom database) -->
                                 <details style="margin-bottom: 16px; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; background: var(--bg-tertiary);">
                                     <summary style="cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); user-select: none;">
-                                        🔧 Advanced: Use Custom Firebase Project
+                                        🔧 Advanced: Use Custom Cloud Project
                                     </summary>
                                     <div id="firebase-credentials-fields" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 12px;">
                                         <div class="form-group">
@@ -1252,7 +1296,7 @@
                                         </div>
                                         <div class="form-group">
                                             <label class="form-label" for="firebase-auth-domain">Auth Domain</label>
-                                            <input type="text" id="firebase-auth-domain" class="form-input" placeholder="project-id.firebaseapp.com">
+                                            <input type="text" id="firebase-auth-domain" class="form-input" placeholder="project-id.sync-domain.com">
                                         </div>
                                         <div class="form-group">
                                             <label class="form-label" for="firebase-project-id">Project ID</label>
@@ -1272,7 +1316,7 @@
                                         </div>
                                     </div>
                                     <div style="margin-top: 12px; font-size: 0.75rem; color: var(--text-secondary); line-height: 1.5;">
-                                        Leave these fields blank to use the website's default shared cloud database sync. Fill them out only if you wish to run syncing on your own private Firebase project.
+                                        Leave these fields blank to use the website's default shared cloud database sync. Fill them out only if you wish to run syncing on your own private cloud database project.
                                     </div>
                                 </details>
 
@@ -1480,10 +1524,10 @@
             </div>
             <div class="modal-body" style="font-size: 0.9rem; line-height: 1.6; max-height: 60vh; overflow-y: auto; padding-right: 8px; color: var(--text-primary);">
                 <p style="margin-bottom: 12px;">Last updated: June 9, 2026</p>
-                <p style="margin-bottom: 16px;">This Privacy Policy describes how InvoiceFlow collects, uses, and discloses your information when you use our application.</p>
+                <p style="margin-bottom: 16px;">This Privacy Policy describes how InvoiceTec collects, uses, and discloses your information when you use our application.</p>
                 
                 <h4 style="font-size: 1rem; font-weight: 700; margin-top: 16px; margin-bottom: 8px; color: var(--text-primary);">1. Client-Side Data Storage</h4>
-                <p style="margin-bottom: 16px;">InvoiceFlow is designed as a privacy-first web application. All invoice documents, customer contact profiles, company information, and settings are stored locally in your browser's IndexedDB database. We do not transmit, sync, or back up your business data to external servers. Your financial data stays entirely on your machine unless you choose to export it manually.</p>
+                <p style="margin-bottom: 16px;">InvoiceTec is designed as a privacy-first web application. All invoice documents, customer contact profiles, company information, and settings are stored locally in your browser's IndexedDB database. We do not transmit, sync, or back up your business data to external servers. Your financial data stays entirely on your machine unless you choose to export it manually.</p>
                 
                 <h4 style="font-size: 1rem; font-weight: 700; margin-top: 16px; margin-bottom: 8px; color: var(--text-primary);">2. Google AdSense & Third-Party Cookies</h4>
                 <p style="margin-bottom: 12px;">We use Google AdSense to serve advertisements on our website to help fund the development of this tool. For AdSense to function properly:</p>
@@ -1516,16 +1560,16 @@
             </div>
             <div class="modal-body" style="font-size: 0.9rem; line-height: 1.6; max-height: 60vh; overflow-y: auto; padding-right: 8px; color: var(--text-primary);">
                 <p style="margin-bottom: 12px;">Last updated: June 12, 2026</p>
-                <p style="margin-bottom: 16px;">Welcome to InvoiceFlow. By using our website, tools, and services, you agree to comply with and be bound by the following Terms of Service.</p>
+                <p style="margin-bottom: 16px;">Welcome to InvoiceTec. By using our website, tools, and services, you agree to comply with and be bound by the following Terms of Service.</p>
                 
                 <h4 style="font-size: 1rem; font-weight: 700; margin-top: 16px; margin-bottom: 8px; color: var(--text-primary);">1. Terms of Use</h4>
-                <p style="margin-bottom: 16px;">InvoiceFlow is a client-side invoice generator utility. All calculations, invoice formatting, and operations are run in your local browser environment. You are entirely responsible for the invoices you generate and send, ensuring they are accurate, legal, and comply with your local tax regulations.</p>
+                <p style="margin-bottom: 16px;">InvoiceTec is a client-side invoice generator utility. All calculations, invoice formatting, and operations are run in your local browser environment. You are entirely responsible for the invoices you generate and send, ensuring they are accurate, legal, and comply with your local tax regulations.</p>
                 
                 <h4 style="font-size: 1rem; font-weight: 700; margin-top: 16px; margin-bottom: 8px; color: var(--text-primary);">2. Service Availability & Local Storage</h4>
                 <p style="margin-bottom: 16px;">We do not guarantee backup of your data. Your data is stored locally in your browser's IndexedDB database. If you clear your browser cache, storage, or reset your system, your local data may be permanently deleted. We encourage users to frequently use the "Export All Data" feature under Settings to keep manual offline backups.</p>
                 
                 <h4 style="font-size: 1rem; font-weight: 700; margin-top: 16px; margin-bottom: 8px; color: var(--text-primary);">3. Disclaimer of Warranties</h4>
-                <p style="margin-bottom: 16px;">InvoiceFlow is provided "as is" and "as available" without warranties of any kind, either express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement. We are not liable for any financial errors, lost data, or legal issues resulting from the use of our generator.</p>
+                <p style="margin-bottom: 16px;">InvoiceTec is provided "as is" and "as available" without warranties of any kind, either express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement. We are not liable for any financial errors, lost data, or legal issues resulting from the use of our generator.</p>
                 
                 <h4 style="font-size: 1rem; font-weight: 700; margin-top: 16px; margin-bottom: 8px; color: var(--text-primary);">4. Governing Law</h4>
                 <p style="margin-bottom: 8px;">These terms shall be governed by and interpreted in accordance with standard internet usage guidelines and local commerce regulations.</p>
@@ -1539,7 +1583,7 @@
     <!-- GDPR Cookie Consent Banner (Bug 7) -->
     <div class="cookie-banner" id="cookie-consent-banner" style="display: none;">
         <div class="cookie-content">
-            <p>We use cookies to serve personalized ads and analyze traffic via Google AdSense. Read our <a href="javascript:void(0)" id="cookie-privacy-link">Privacy Policy</a> to learn more.</p>
+            <p>We use cookies to serve personalized ads and analyze traffic via Google AdSense. Read our <button type="button" id="cookie-privacy-link" style="background: none; border: none; padding: 0; cursor: pointer; color: var(--accent-primary); text-decoration: underline; font-family: inherit; font-size: inherit; display: inline; vertical-align: baseline;">Privacy Policy</button> to learn more.</p>
         </div>
         <div class="cookie-actions">
             <button class="btn btn-secondary btn-sm" id="cookie-reject-btn" style="height: 36px; padding: 0 16px;">Reject</button>

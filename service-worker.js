@@ -1,4 +1,4 @@
-const CACHE_NAME = 'invoiceflow-cache-v1';
+const CACHE_NAME = 'invoicetec-cache-v1';
 const ASSETS = [
   '/',
   '/index.html',

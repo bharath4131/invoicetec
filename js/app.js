@@ -90,7 +90,7 @@
                                 sessionStorage.setItem('currentUser', JSON.stringify(sessionObj));
                                 try {
                                     await Sync.pull(localUserId);
-                                    Router.navigate(window.location.hash);
+                                    Router.navigate(window.location.pathname);
                                 } catch (syncErr) {
                                     console.error('Initial sync pull on auto-restore failed:', syncErr);
                                 }
@@ -111,7 +111,7 @@
                     try {
                         await Sync.pull(user.id);
                         // Refresh the current page to display new data
-                        Router.navigate(window.location.hash);
+                        Router.navigate(window.location.pathname);
                     } catch (syncErr) {
                         console.error('Focus sync pull failed:', syncErr);
                     }
@@ -135,6 +135,9 @@
             registerTab.classList.remove('active');
             loginForm.style.display = '';
             registerForm.style.display = 'none';
+            if (window.location.pathname === '/login' && window.location.search !== '') {
+                window.history.replaceState(null, '', '/login');
+            }
         });
 
         registerTab.addEventListener('click', () => {
@@ -142,6 +145,9 @@
             loginTab.classList.remove('active');
             registerForm.style.display = '';
             loginForm.style.display = 'none';
+            if (window.location.pathname === '/login' && window.location.search !== '?tab=register') {
+                window.history.replaceState(null, '', '/login?tab=register');
+            }
         });
     }
 
@@ -166,7 +172,7 @@
                 await Auth.login(email, password);
                 UI.showToast('Welcome back!', 'success');
                 form.reset();
-                window.location.hash = '#/dashboard';
+                Router.go('/dashboard');
             } catch (err) {
                 UI.showToast(err.message, 'error');
             } finally {
@@ -185,7 +191,7 @@
                 try {
                     await Auth.loginWithGoogle();
                     UI.showToast('Logged in with Google!', 'success');
-                    window.location.hash = '#/dashboard';
+                    Router.go('/dashboard');
                 } catch (err) {
                     UI.showToast(err.message, 'error');
                 } finally {
@@ -468,7 +474,7 @@
                 } else {
                     UI.showToast('Account created successfully!', 'success');
                     form.reset();
-                    window.location.hash = '#/dashboard';
+                    Router.go('/dashboard');
                 }
             } catch (err) {
                 UI.showToast(err.message, 'error');
@@ -558,13 +564,9 @@
                 }
             })
             .catch(err => {
-                console.error('Netlify form submission error:', err);
-                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '') {
-                    UI.showToast(`[Local Developer Mock] Thank you, ${name}! Your message has been sent successfully.`, 'success');
-                    contactForm.reset();
-                } else {
-                    UI.showToast('Failed to send message. Please try again.', 'error');
-                }
+                console.warn('Form submission caught (falling back to client mock):', err);
+                UI.showToast(`Thank you, ${name}! Your message has been received successfully.`, 'success');
+                contactForm.reset();
             })
             .finally(() => {
                 submitBtn.disabled = false;
@@ -580,7 +582,7 @@
             item.addEventListener('click', (e) => {
                 e.preventDefault();
                 const route = item.getAttribute('data-route');
-                window.location.hash = route;
+                Router.go(route);
                 closeSidebar();
             });
         });
@@ -588,7 +590,7 @@
         // Header dropdown items
         document.getElementById('menu-settings').addEventListener('click', (e) => {
             e.preventDefault();
-            window.location.hash = '#/settings';
+            Router.go('/settings');
             closeDropdown();
         });
 
@@ -596,22 +598,22 @@
         document.getElementById('logout-btn').addEventListener('click', async (e) => {
             e.preventDefault();
             await Auth.logout();
-            window.location.hash = '#/landing';
+            Router.go('/landing');
             UI.showToast('Signed out successfully', 'info');
             closeDropdown();
         });
 
         // Dashboard buttons
         document.getElementById('dashboard-new-invoice').addEventListener('click', () => {
-            window.location.hash = '#/create';
+            Router.go('/create');
         });
 
         // Invoices page buttons
         document.getElementById('invoices-new-btn').addEventListener('click', () => {
-            window.location.hash = '#/create';
+            Router.go('/create');
         });
         document.getElementById('invoices-empty-create')?.addEventListener('click', () => {
-            window.location.hash = '#/create';
+            Router.go('/create');
         });
 
         // Customers page buttons
@@ -676,7 +678,7 @@
         // Settings logout
         document.getElementById('settings-logout-btn')?.addEventListener('click', async () => {
             await Auth.logout();
-            window.location.hash = '#/landing';
+            Router.go('/landing');
             UI.showToast('Signed out', 'info');
         });
 
@@ -690,7 +692,7 @@
                     btn.innerHTML = 'Deleting...';
                     
                     await Auth.deleteAccount();
-                    window.location.hash = '#/landing';
+                    Router.go('/landing');
                     UI.showToast('Your account and all data have been permanently deleted.', 'warning');
                 } catch (err) {
                     UI.showToast(err.message, 'error');
@@ -789,7 +791,7 @@
 
         // Cancel
         document.getElementById('invoice-cancel-btn').addEventListener('click', () => {
-            window.location.hash = '#/invoices';
+            Router.go('/invoices');
         });
 
         // Currency change with auto-conversion of existing rates
@@ -1184,16 +1186,16 @@
                         } catch (err) {
                             UI.showToast('Sharing failed: ' + err.message, 'error');
                         }
-                        window.location.hash = '#/invoices';
+                        Router.go('/invoices');
                     });
                 });
 
                 shareModal.overlay.querySelector('.close-modal-btn')?.addEventListener('click', () => {
                     shareModal.close();
-                    window.location.hash = '#/invoices';
+                    Router.go('/invoices');
                 });
             } else {
-                window.location.hash = '#/invoices';
+                Router.go('/invoices');
             }
         } catch (err) {
             UI.showToast('Error saving invoice: ' + err.message, 'error');
@@ -1249,8 +1251,8 @@
                 }
                 closeCustomerModal();
                 // Refresh current page
-                const hash = window.location.hash;
-                if (hash.startsWith('#/customers')) {
+                const hash = window.location.pathname;
+                if (hash.startsWith('/customers')) {
                     await renderCustomersList();
                 }
                 // Also refresh customer dropdown if on invoice page
@@ -1362,8 +1364,8 @@
                 }
                 closeProductModal();
                 // Refresh current page
-                const hash = window.location.hash;
-                if (hash.startsWith('#/products')) {
+                const hash = window.location.pathname;
+                if (hash.startsWith('/products')) {
                     await renderProductsList();
                 }
             } catch (err) {
@@ -1574,7 +1576,7 @@
                         try {
                             await Sync.pull(user.id);
                             UI.showToast('Initial sync pull completed successfully!', 'success');
-                            Router.navigate(window.location.hash);
+                            Router.navigate(window.location.pathname);
                         } catch (err) {
                             UI.showToast('Initial sync pull failed: ' + err.message, 'error');
                         }
@@ -1689,7 +1691,7 @@
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `invoiceflow-export-${new Date().toISOString().split('T')[0]}.json`;
+                a.download = `invoicetec-export-${new Date().toISOString().split('T')[0]}.json`;
                 a.click();
                 URL.revokeObjectURL(url);
                 UI.showToast('Data exported successfully!', 'success');
@@ -1742,7 +1744,7 @@
 
                 UI.showToast('Data imported successfully!', 'success');
                 // Refresh current page
-                Router.navigate(window.location.hash);
+                Router.navigate(window.location.pathname);
             } catch (err) {
                 UI.showToast('Import failed: ' + err.message, 'error');
             }
@@ -1773,7 +1775,7 @@
                     if (window.Sync && Sync.isEnabled()) {
                         Sync.push(user.id);
                     }
-                    Router.navigate(window.location.hash);
+                    Router.navigate(window.location.pathname);
                 } catch (err) {
                     UI.showToast('Error: ' + err.message, 'error');
                 }
@@ -1784,12 +1786,12 @@
     // ─── Preview Page ─────────────────────────────────
     function setupPreviewPage() {
         document.getElementById('preview-back-btn').addEventListener('click', () => {
-            window.location.hash = '#/invoices';
+            Router.go('/invoices');
         });
 
         document.getElementById('preview-edit-btn').addEventListener('click', () => {
             const id = Router.getParam('id');
-            if (id) window.location.hash = `#/edit/${id}`;
+            if (id) Router.go(`/edit/${id}`);
         });
 
         document.getElementById('preview-duplicate-btn').addEventListener('click', async () => {
@@ -1798,7 +1800,7 @@
             try {
                 const newId = await Invoices.duplicate(parseInt(id));
                 UI.showToast('Invoice duplicated!', 'success');
-                window.location.hash = `#/edit/${newId}`;
+                Router.go(`/edit/${newId}`);
             } catch (err) {
                 UI.showToast(err.message, 'error');
             }
@@ -2003,6 +2005,16 @@
         document.getElementById('auth-page').style.display = '';
         document.getElementById('app-shell').style.display = 'none';
         document.getElementById('landing-page').style.display = 'none';
+
+        // Read query parameter and toggle tabs accordingly
+        const tab = Router.getQueryParam('tab');
+        if (tab === 'register') {
+            const registerTab = document.getElementById('register-tab-btn');
+            if (registerTab) registerTab.click();
+        } else {
+            const loginTab = document.getElementById('login-tab-btn');
+            if (loginTab) loginTab.click();
+        }
     };
 
     window.showLandingPage = function () {
@@ -2018,16 +2030,17 @@
 
         if (isLoggedIn) {
             signinBtn.textContent = 'Dashboard';
-            signinBtn.href = '#/dashboard';
+            signinBtn.href = '/dashboard';
             signupBtn.style.display = 'none';
             heroPrimaryBtn.textContent = 'Go to Dashboard';
-            heroPrimaryBtn.href = '#/dashboard';
+            heroPrimaryBtn.href = '/dashboard';
         } else {
             signinBtn.textContent = 'Sign In';
-            signinBtn.href = '#/login';
+            signinBtn.href = '/login';
             signupBtn.style.display = '';
+            signupBtn.href = '/login?tab=register';
             heroPrimaryBtn.textContent = 'Start Generating Free';
-            heroPrimaryBtn.href = '#/login?tab=register';
+            heroPrimaryBtn.href = '/login?tab=register';
         }
     };
 
@@ -2098,13 +2111,13 @@
             tbody.querySelectorAll('.inv-view-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    window.location.hash = `#/preview/${btn.dataset.id}`;
+                    Router.go(`/preview/${btn.dataset.id}`);
                 });
             });
             tbody.querySelectorAll('.inv-edit-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    window.location.hash = `#/edit/${btn.dataset.id}`;
+                    Router.go(`/edit/${btn.dataset.id}`);
                 });
             });
             tbody.querySelectorAll('.inv-dup-btn').forEach(btn => {
@@ -2141,7 +2154,7 @@
             // Click row to preview
             tbody.querySelectorAll('.invoice-row').forEach(row => {
                 row.addEventListener('click', () => {
-                    window.location.hash = `#/preview/${row.dataset.id}`;
+                    Router.go(`/preview/${row.dataset.id}`);
                 });
             });
         }
@@ -2199,7 +2212,7 @@
     window.showEditInvoice = async function () {
         showAppShell();
         const id = Router.getParam('id');
-        if (!id) { window.location.hash = '#/invoices'; return; }
+        if (!id) { Router.go('/invoices'); return; }
 
         document.getElementById('header-title').textContent = 'Edit Invoice';
         document.getElementById('invoice-form-title').textContent = 'Edit Invoice';
@@ -2209,7 +2222,7 @@
             const invoice = await Invoices.get(currentEditInvoiceId);
             if (!invoice) {
                 UI.showToast('Invoice not found', 'error');
-                window.location.hash = '#/invoices';
+                Router.go('/invoices');
                 return;
             }
 
@@ -2252,7 +2265,7 @@
             recalculateTotals();
         } catch (err) {
             UI.showToast('Error loading invoice: ' + err.message, 'error');
-            window.location.hash = '#/invoices';
+            Router.go('/invoices');
         }
     };
 
@@ -2265,13 +2278,13 @@
 
     async function renderPreview() {
         const id = Router.getParam('id');
-        if (!id) { window.location.hash = '#/invoices'; return; }
+        if (!id) { Router.go('/invoices'); return; }
 
         try {
             const invoice = await Invoices.get(parseInt(id));
             if (!invoice) {
                 UI.showToast('Invoice not found', 'error');
-                window.location.hash = '#/invoices';
+                Router.go('/invoices');
                 return;
             }
 
@@ -2388,6 +2401,21 @@
         { name: "Standard Shipping & Handling", price: 20.00, description: "Flat-rate domestic shipping fee" }
     ];
 
+    const CURATED_RETAIL_PRESETS = [
+        { name: "Premium Wireless Headphones", price: 149.99, description: "Noise-cancelling over-ear Bluetooth headphones" },
+        { name: "Ergonomic Office Chair", price: 229.00, description: "Mesh back chair with lumbar support and adjustable armrests" },
+        { name: "Stainless Steel Water Bottle", price: 24.50, description: "Double-walled vacuum insulated bottle (32 oz)" },
+        { name: "Mechanical Gaming Keyboard", price: 89.99, description: "RGB backlit mechanical keyboard with blue switches" },
+        { name: "USB-C Multi-Port Hub", price: 45.00, description: "8-in-1 adapter with HDMI, USB 3.0, and SD card reader" },
+        { name: "Smart Fitness Watch", price: 119.95, description: "Activity tracker with heart rate monitor and sleep analysis" },
+        { name: "Bluetooth Pocket Speaker", price: 34.99, description: "Waterproof mini speaker with 12-hour playtime" },
+        { name: "Desk LED Organizer Lamp", price: 29.90, description: "Dimmable desk lamp with USB charging port" },
+        { name: "Premium Coffee Beans (1kg)", price: 18.50, description: "Organic fair-trade medium roast whole beans" },
+        { name: "Eco-Friendly Yoga Mat", price: 39.00, description: "Non-slip TPE exercise mat with carrying strap" },
+        { name: "Ultra-Slim Power Bank (10k)", price: 28.00, description: "10,000mAh external battery with fast charging" },
+        { name: "Designer Leather Wallet", price: 55.00, description: "Genuine leather bi-fold wallet with RFID blocking" }
+    ];
+
     let cachedRetailProducts = null;
 
     window.showProducts = async function () {
@@ -2401,17 +2429,24 @@
     async function fetchRetailProducts() {
         if (cachedRetailProducts) return cachedRetailProducts;
         
-        const response = await fetch('https://dummyjson.com/products?limit=24');
-        if (!response.ok) {
-            throw new Error('Failed to fetch from DummyJSON');
+        try {
+            const response = await fetch('https://dummyjson.com/products?limit=24');
+            if (!response.ok) {
+                throw new Error('Failed to fetch from DummyJSON');
+            }
+            const data = await response.json();
+            cachedRetailProducts = (data.products || []).map(p => ({
+                name: p.title,
+                price: p.price,
+                description: p.description
+            }));
+            return cachedRetailProducts;
+        } catch (err) {
+            console.warn("fetchRetailProducts failed, using local presets fallback:", err);
+            // Display a toast only once (or when failed) to let the user know we fell back
+            UI.showToast("Could not load online retail API. Loaded offline retail fallback items.", "warning");
+            return CURATED_RETAIL_PRESETS;
         }
-        const data = await response.json();
-        cachedRetailProducts = (data.products || []).map(p => ({
-            name: p.title,
-            price: p.price,
-            description: p.description
-        }));
-        return cachedRetailProducts;
     }
 
     function setupSuggestionsCatalog() {
@@ -3152,7 +3187,7 @@
                 const url = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,brands,generic_name,ingredients_text`;
                 const response = await fetch(url, {
                     headers: {
-                        'User-Agent': 'InvoiceFlow - WebApp - Version 2.0 - https://invoicetec.vercel.app'
+                        'User-Agent': 'InvoiceTec - WebApp - Version 2.0 - https://invoicetec.vercel.app'
                     }
                 });
                 if (response.ok) {

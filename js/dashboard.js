@@ -167,13 +167,13 @@ window.Dashboard = (function () {
         container.innerHTML = `
           <div class="empty-state animate-fadeIn" style="text-align: center; padding: 48px 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: var(--bg-secondary); border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-top: 24px;">
             <div style="font-size: 4rem; margin-bottom: 8px;">👋</div>
-            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">Welcome to InvoiceFlow!</h2>
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">Welcome to InvoiceTec!</h2>
             <p style="color: var(--text-secondary); max-width: 450px; line-height: 1.6; margin: 0 auto 12px;">You haven't created any invoices yet. Get started in seconds by adding your company profile, a customer, and generating your first invoice!</p>
             <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
-              <button class="btn btn-primary" onclick="window.location.hash='#/create'">
+              <button class="btn btn-primary" onclick="Router.go('/create')">
                 <span>➕</span> Create Your First Invoice
               </button>
-              <button class="btn btn-secondary" onclick="window.location.hash='#/settings'">
+              <button class="btn btn-secondary" onclick="Router.go('/settings')">
                 <span>⚙️</span> Setup Company Profile
               </button>
             </div>
@@ -209,7 +209,7 @@ window.Dashboard = (function () {
       var newInvBtn = document.getElementById('quick-new-invoice');
       if (newInvBtn) {
         newInvBtn.addEventListener('click', function () {
-          window.location.hash = '#/create';
+          Router.go('/create');
         });
       }
       var newCustBtn = document.getElementById('quick-new-customer');
@@ -218,7 +218,7 @@ window.Dashboard = (function () {
           if (window.CustomersPage && CustomersPage.openAddModal) {
             CustomersPage.openAddModal();
           } else {
-            window.location.hash = '#/customers';
+            Router.go('/customers');
           }
         });
       }
@@ -227,7 +227,7 @@ window.Dashboard = (function () {
       var rows = container.querySelectorAll('.data-table tbody tr[data-id]');
       rows.forEach(function (row) {
         row.addEventListener('click', function () {
-          window.location.hash = '#/preview/' + row.getAttribute('data-id');
+          Router.go('/preview/' + row.getAttribute('data-id'));
         });
       });
 
@@ -360,7 +360,7 @@ window.Dashboard = (function () {
           '<td class="font-medium">' + UI.formatCurrency(inv.total, inv.currency) + '</td>' +
           '<td>' + UI.getStatusBadge(inv.status) + '</td>' +
           '<td>' +
-            '<a href="#/preview/' + inv.id + '" class="btn btn-sm btn-ghost" title="View Invoice" onclick="event.stopPropagation();">' +
+            '<a href="/preview/' + inv.id + '" class="btn btn-sm btn-ghost" title="View Invoice" onclick="event.stopPropagation();">' +
               '👁️ View' +
             '</a>' +
           '</td>' +

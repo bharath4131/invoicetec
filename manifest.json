@@ -1,6 +1,6 @@
 {
-  "name": "InvoiceFlow — Professional Invoice Generator",
-  "short_name": "InvoiceFlow",
+  "name": "InvoiceTec — Professional Invoice Generator",
+  "short_name": "InvoiceTec",
   "description": "Create, manage, and download beautiful invoices as PDF. Free, fast, and fully private.",
   "start_url": "/index.html",
   "display": "standalone",

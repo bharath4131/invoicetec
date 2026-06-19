@@ -1,5 +1,5 @@
 /* ============================================================
-   router.js — Hash-based SPA Router
+   router.js — HTML5 History API SPA Router
    Expose: window.Router
    ============================================================ */
 
@@ -7,60 +7,59 @@ window.Router = (function () {
   'use strict';
 
   // ── Route definitions ───────────────────────────────────────
-  // Maps hash patterns to { pageId, handler }
-  // handler is the global function name from app.js
+  // Maps URL paths to { pageId, handler }
   var routeDefs = [
-    { pattern: '#/landing',      pageId: 'landing-page',         handler: 'showLandingPage',    isPublic: true },
-    { pattern: '#/login',        pageId: 'auth-page',            handler: 'showAuthPage',       isPublic: true },
-    { pattern: '#/dashboard',    pageId: 'dashboard-page',       handler: 'showDashboard' },
-    { pattern: '#/invoices',     pageId: 'invoices-page',        handler: 'showInvoices' },
-    { pattern: '#/create',       pageId: 'create-invoice-page',  handler: 'showCreateInvoice' },
-    { pattern: '#/edit/:id',     pageId: 'create-invoice-page',  handler: 'showEditInvoice' },
-    { pattern: '#/preview/:id',  pageId: 'preview-invoice-page', handler: 'showPreviewInvoice' },
-    { pattern: '#/customers',    pageId: 'customers-page',       handler: 'showCustomers' },
-    { pattern: '#/products',     pageId: 'products-page',        handler: 'showProducts' },
-    { pattern: '#/settings',     pageId: 'settings-page',        handler: 'showSettings' }
+    { pattern: '/landing',      pageId: 'landing-page',         handler: 'showLandingPage',    isPublic: true },
+    { pattern: '/login',        pageId: 'auth-page',            handler: 'showAuthPage',       isPublic: true },
+    { pattern: '/dashboard',    pageId: 'dashboard-page',       handler: 'showDashboard' },
+    { pattern: '/invoices',     pageId: 'invoices-page',        handler: 'showInvoices' },
+    { pattern: '/create',       pageId: 'create-invoice-page',  handler: 'showCreateInvoice' },
+    { pattern: '/edit/:id',     pageId: 'create-invoice-page',  handler: 'showEditInvoice' },
+    { pattern: '/preview/:id',  pageId: 'preview-invoice-page', handler: 'showPreviewInvoice' },
+    { pattern: '/customers',    pageId: 'customers-page',       handler: 'showCustomers' },
+    { pattern: '/products',     pageId: 'products-page',        handler: 'showProducts' },
+    { pattern: '/settings',     pageId: 'settings-page',        handler: 'showSettings' }
   ];
 
   var routeMeta = {
-    '#/landing': {
-      title: 'InvoiceFlow — Professional Invoice Generator',
+    '/landing': {
+      title: 'InvoiceTec — Professional Invoice Generator',
       desc: 'Create, manage, and download beautiful invoices as PDF. Free, fast, and fully private.'
     },
-    '#/login': {
-      title: 'Sign In | InvoiceFlow',
-      desc: 'Access your InvoiceFlow dashboard, sign in with email or Google, and manage your invoices.'
+    '/login': {
+      title: 'Sign In | InvoiceTec',
+      desc: 'Access your InvoiceTec dashboard, sign in with email or Google, and manage your invoices.'
     },
-    '#/dashboard': {
-      title: 'Dashboard | InvoiceFlow',
+    '/dashboard': {
+      title: 'Dashboard | InvoiceTec',
       desc: 'Analyze monthly earnings, check top clients, and see recent activity trends in your dashboard.'
     },
-    '#/invoices': {
-      title: 'Manage Invoices | InvoiceFlow',
+    '/invoices': {
+      title: 'Manage Invoices | InvoiceTec',
       desc: 'View your invoices, filter by status, and create new client billing bills.'
     },
-    '#/create': {
-      title: 'New Invoice | InvoiceFlow',
+    '/create': {
+      title: 'New Invoice | InvoiceTec',
       desc: 'Draft a new professional invoice using customizable layouts and dynamic currencies.'
     },
-    '#/edit/:id': {
-      title: 'Edit Invoice | InvoiceFlow',
+    '/edit/:id': {
+      title: 'Edit Invoice | InvoiceTec',
       desc: 'Modify invoice details, edit line items, and adjust taxes or discounts.'
     },
-    '#/preview/:id': {
-      title: 'Preview Invoice | InvoiceFlow',
+    '/preview/:id': {
+      title: 'Preview Invoice | InvoiceTec',
       desc: 'Preview the print-ready PDF invoice template, download it locally, or share it.'
     },
-    '#/customers': {
-      title: 'Client Directory | InvoiceFlow',
+    '/customers': {
+      title: 'Client Directory | InvoiceTec',
       desc: 'Manage your customer list, billing addresses, contact details, and transactions.'
     },
-    '#/products': {
-      title: 'Product Catalog | InvoiceFlow',
+    '/products': {
+      title: 'Product Catalog | InvoiceTec',
       desc: 'Manage your catalog items, standard prices, and barcode associations.'
     },
-    '#/settings': {
-      title: 'Settings | InvoiceFlow',
+    '/settings': {
+      title: 'Settings | InvoiceTec',
       desc: 'Configure company profile, invoice default currencies, tax defaults, and Cloud Sync.'
     }
   };
@@ -68,8 +67,8 @@ window.Router = (function () {
   // ── Helpers ──────────────────────────────────────────────────
 
   /**
-   * Parse a route pattern like '#/edit/:id' and return
-   * { regex, paramNames } so we can match against the current hash.
+   * Parse a route pattern like '/edit/:id' and return
+   * { regex, paramNames } so we can match against the current pathname.
    */
   function _parsePattern(pattern) {
     var paramNames = [];
@@ -117,22 +116,29 @@ window.Router = (function () {
 
   // ── navigate ────────────────────────────────────────────────
 
-  function navigate(hash) {
-    hash = hash || window.location.hash || '#/';
+  function navigate(path) {
+    path = path || window.location.pathname + window.location.search || '/';
+
+    // Separate pathname and query/search string
+    var cleanPath = path;
+    var qIndex = path.indexOf('?');
+    if (qIndex !== -1) {
+      cleanPath = path.substring(0, qIndex);
+    }
 
     // Default / empty → landing (if not logged in) or dashboard (if logged in)
-    if (!hash || hash === '#' || hash === '#/') {
+    if (!cleanPath || cleanPath === '/' || cleanPath === '/index.html') {
       if (window.Auth && Auth.isLoggedIn()) {
-        window.location.hash = '#/dashboard';
+        go('/dashboard');
       } else {
-        window.location.hash = '#/landing';
+        go('/landing');
       }
       return;
     }
 
     // Auth guard: if logged in and going to login → dashboard
-    if (hash === '#/login' && window.Auth && Auth.isLoggedIn()) {
-      window.location.hash = '#/dashboard';
+    if (cleanPath === '/login' && window.Auth && Auth.isLoggedIn()) {
+      go('/dashboard');
       return;
     }
 
@@ -140,7 +146,7 @@ window.Router = (function () {
     var matched = null;
     for (var i = 0; i < compiledRoutes.length; i++) {
       var route = compiledRoutes[i];
-      var m = hash.match(route.regex);
+      var m = cleanPath.match(route.regex);
       if (m) {
         // Extract params
         currentParams = {};
@@ -154,28 +160,28 @@ window.Router = (function () {
 
     if (!matched) {
       // Unknown route → dashboard
-      window.location.hash = '#/dashboard';
+      go('/dashboard');
       return;
     }
 
     // Protected-route guard
     if (!matched.isPublic) {
       if (window.Auth && !Auth.isLoggedIn()) {
-        window.location.hash = '#/login';
+        go('/login');
         return;
       }
     }
 
     // Update sidebar active state
     if (window.UI && UI.updateSidebarActive) {
-      UI.updateSidebarActive(hash);
+      UI.updateSidebarActive(cleanPath);
     }
 
     // Show the target page panel
     showPage(matched.pageId);
 
     // Update Document Title and Meta Description for SEO
-    var meta = routeMeta[matched.pattern] || routeMeta['#/landing'];
+    var meta = routeMeta[matched.pattern] || routeMeta['/landing'];
     document.title = meta.title;
     var metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
@@ -189,20 +195,59 @@ window.Router = (function () {
     }
   }
 
+  // ── go (history navigation) ─────────────────────────────────
+
+  function go(path) {
+    var currentPath = window.location.pathname + window.location.search;
+    if (currentPath !== path) {
+      window.history.pushState(null, '', path);
+    }
+    navigate(path);
+  }
+
   // ── getParam ────────────────────────────────────────────────
 
   function getParam(name) {
     return currentParams[name] || null;
   }
 
+  // ── getQueryParam ───────────────────────────────────────────
+
+  function getQueryParam(name) {
+    var search = window.location.search;
+    if (!search) {
+      var qIndex = window.location.href.indexOf('?');
+      if (qIndex !== -1) {
+        search = window.location.href.substring(qIndex);
+      }
+    }
+    if (!search) return null;
+    var params = new URLSearchParams(search);
+    return params.get(name);
+  }
+
   // ── init ────────────────────────────────────────────────────
 
   function init() {
-    window.addEventListener('hashchange', function () {
-      navigate(window.location.hash);
+    window.addEventListener('popstate', function () {
+      navigate(window.location.pathname + window.location.search);
     });
+
+    // Intercept internal relative anchor links for smooth SPA navigation
+    document.addEventListener('click', function (e) {
+      var target = e.target.closest('a');
+      if (target) {
+        var href = target.getAttribute('href');
+        // Handle path routes starting with '/' (but not external links)
+        if (href && href.startsWith('/') && !href.startsWith('//')) {
+          e.preventDefault();
+          go(href);
+        }
+      }
+    });
+
     // Initial navigation
-    navigate(window.location.hash);
+    navigate(window.location.pathname + window.location.search);
   }
 
   // ── Public API ──────────────────────────────────────────────
@@ -210,7 +255,9 @@ window.Router = (function () {
   return {
     init:      init,
     navigate:  navigate,
+    go:        go,
     getParam:  getParam,
+    getQueryParam: getQueryParam,
     showPage:  showPage
   };
 
