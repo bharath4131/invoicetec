@@ -54,6 +54,10 @@
     {
       "source": "/generator/:path*",
       "destination": "/index.html"
+    },
+    {
+      "source": "/tools/:path*",
+      "destination": "/index.html"
     }
   ]
 }

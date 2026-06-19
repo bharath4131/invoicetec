@@ -21,7 +21,7 @@
         // Register PWA Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {
-                navigator.serviceWorker.register('./service-worker.js')
+                navigator.serviceWorker.register('/service-worker.js')
                     .then(function (reg) {
                         console.log('Service Worker registered successfully with scope:', reg.scope);
                     })
@@ -1981,8 +1981,10 @@
     function hideGuidePages() {
         const guideInvoice = document.getElementById('guide-invoice-page');
         const guideTerms = document.getElementById('guide-terms-page');
+        const toolsRate = document.getElementById('tools-rate-page');
         if (guideInvoice) guideInvoice.style.display = 'none';
         if (guideTerms) guideTerms.style.display = 'none';
+        if (toolsRate) toolsRate.style.display = 'none';
     }
 
     function resetLandingPageSEO() {
@@ -2119,6 +2121,83 @@
         if (title) title.innerHTML = 'Create Beautiful Invoices for <span>Photo Shoots</span>';
         if (desc) desc.textContent = 'InvoiceTec Photography Edition is a fast, local-first invoice generator for freelance photographers, videographers, and studio editors. Bill shoots and client projects privately.';
     };
+
+    window.showRateCalculator = function () {
+        document.getElementById('landing-page').style.display = 'none';
+        document.getElementById('auth-page').style.display = 'none';
+        document.getElementById('app-shell').style.display = 'none';
+        hideGuidePages();
+
+        const el = document.getElementById('tools-rate-page');
+        if (el) {
+            el.style.display = 'block';
+            initRateCalculatorListeners();
+        }
+    };
+
+    let rateListenersInitialized = false;
+    function initRateCalculatorListeners() {
+        if (rateListenersInitialized) return;
+        rateListenersInitialized = true;
+
+        const inputs = [
+            'rate-income',
+            'rate-expenses',
+            'rate-vacation',
+            'rate-hours',
+            'rate-tax'
+        ];
+
+        inputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', calculateRate);
+            }
+        });
+
+        calculateRate();
+    }
+
+    function calculateRate() {
+        const income = parseFloat(document.getElementById('rate-income').value) || 0;
+        const expenses = parseFloat(document.getElementById('rate-expenses').value) || 0;
+        const vacationWeeks = parseFloat(document.getElementById('rate-vacation').value) || 0;
+        const hoursPerWeek = parseFloat(document.getElementById('rate-hours').value) || 0;
+        const taxRate = parseFloat(document.getElementById('rate-tax').value) || 0;
+
+        const weeksWorked = Math.max(0, 52 - vacationWeeks);
+        const totalBillableHours = weeksWorked * hoursPerWeek;
+
+        const grossNeededAfterTax = income + expenses;
+        const taxMultiplier = 1 - (Math.min(99, taxRate) / 100);
+        const totalGrossRevenueNeeded = grossNeededAfterTax / (taxMultiplier || 1);
+
+        let hourlyRate = 0;
+        let dailyRate = 0;
+
+        if (totalBillableHours > 0) {
+            hourlyRate = totalGrossRevenueNeeded / totalBillableHours;
+            dailyRate = hourlyRate * 8;
+        }
+
+        const formatter = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            maximumFractionDigits: 0
+        });
+
+        const hourFormatter = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+
+        document.getElementById('result-hourly').textContent = hourFormatter.format(hourlyRate);
+        document.getElementById('result-daily').textContent = formatter.format(dailyRate);
+        document.getElementById('result-hours-total').textContent = totalBillableHours.toLocaleString();
+        document.getElementById('result-gross').textContent = formatter.format(totalGrossRevenueNeeded);
+    }
 
     // ─── Dashboard ────────────────────────────────────
     window.showDashboard = async function () {

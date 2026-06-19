@@ -23,7 +23,8 @@ window.Router = (function () {
     { pattern: '/guide/payment-terms-explained', pageId: 'guide-terms-page',    handler: 'showGuideTermsPage',    isPublic: true },
     { pattern: '/generator/software-developer', pageId: 'landing-page',        handler: 'showDeveloperGenerator', isPublic: true },
     { pattern: '/generator/graphic-designer',   pageId: 'landing-page',        handler: 'showDesignerGenerator',  isPublic: true },
-    { pattern: '/generator/photographer',       pageId: 'landing-page',        handler: 'showPhotographerGenerator', isPublic: true }
+    { pattern: '/generator/photographer',       pageId: 'landing-page',        handler: 'showPhotographerGenerator', isPublic: true },
+    { pattern: '/tools/rate-calculator',        pageId: 'tools-rate-page',     handler: 'showRateCalculator', isPublic: true }
   ];
 
   var routeMeta = {
@@ -86,6 +87,10 @@ window.Router = (function () {
     '/generator/photographer': {
       title: 'Free Photography Invoice Generator & Receipt Maker | InvoiceTec',
       desc: 'Draft photography invoices instantly. Choose templates, manage customer listings, and generate print-ready PDF invoices for photo shoots.'
+    },
+    '/tools/rate-calculator': {
+      title: 'Free Freelance Hourly Rate Calculator | InvoiceTec',
+      desc: 'Calculate your ideal freelance hourly and daily rate based on desired income, taxes, vacation time, and business expenses. Free pricing calculator for freelancers.'
     }
   };
 

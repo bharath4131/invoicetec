@@ -9,7 +9,7 @@
     <meta name="keywords" content="invoice generator, PDF invoice, billing, business tools">
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#2563eb">
     
     <!-- Canonical link -->
@@ -56,13 +56,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- CSS -->
-    <link rel="stylesheet" href="css/variables.css">
-    <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/pages.css">
-    <link rel="stylesheet" href="css/animations.css">
-    <link rel="stylesheet" href="css/landing.css">
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/pages.css">
+    <link rel="stylesheet" href="/css/animations.css">
+    <link rel="stylesheet" href="/css/landing.css">
 
     <!-- Favicon (inline SVG) -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
@@ -336,6 +336,7 @@
                         <span class="footer-column-title">Resources</span>
                         <a href="/guide/how-to-write-an-invoice" class="footer-link">How to Write an Invoice</a>
                         <a href="/guide/payment-terms-explained" class="footer-link">Payment Terms Guide</a>
+                        <a href="/tools/rate-calculator" class="footer-link">Hourly Rate Calculator</a>
                     </div>
                     <div class="footer-column">
                         <span class="footer-column-title">Legal</span>
@@ -438,6 +439,100 @@
                     <a href="/login?tab=register" class="btn btn-primary" style="padding: 12px 32px; font-size: 1.05rem;">Start Billing with InvoiceTec</a>
                 </div>
             </article>
+        </main>
+    </div>
+
+    <!-- ═══════════ TOOL: FREELANCE HOURLY RATE CALCULATOR ═══════════ -->
+    <div id="tools-rate-page" class="page" style="display: none; padding: 0 20px;">
+        <header class="landing-header" style="max-width: 1200px; margin: 0 auto;">
+            <a href="/landing" class="landing-brand">
+                <span class="landing-brand-icon">📄</span>
+                <span>InvoiceTec</span>
+            </a>
+            <div>
+                <a href="/landing" class="btn btn-secondary btn-sm">← Back to Home</a>
+            </div>
+        </header>
+        <main style="max-width: 1000px; margin: 40px auto; color: var(--text-primary);">
+            <div style="text-align: center; margin-bottom: 40px;">
+                <h1 style="font-size: 2.2rem; font-weight: 800; line-height: 1.3; margin-bottom: 8px;">Freelance Hourly Rate Calculator</h1>
+                <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto; font-size: 1rem;">Determine what you should charge per hour to hit your income goals, cover expenses, and handle taxes.</p>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                <!-- Inputs Section -->
+                <div>
+                    <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 24px; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Calculator Inputs</h2>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" for="rate-income">Desired Annual Net Income ($)</label>
+                            <input type="number" id="rate-income" class="form-input" value="80000" placeholder="e.g. 80000" style="width: 100%;">
+                            <small style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 4px; display: block;">The clean take-home money you want to earn per year after business costs and taxes.</small>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" for="rate-expenses">Annual Business Expenses ($)</label>
+                            <input type="number" id="rate-expenses" class="form-input" value="5000" placeholder="e.g. 5000" style="width: 100%;">
+                            <small style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 4px; display: block;">Software, hardware, subscriptions, insurance, and marketing costs.</small>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" for="rate-vacation">Vacation Weeks / Year</label>
+                                <input type="number" id="rate-vacation" class="form-input" value="4" placeholder="e.g. 4" style="width: 100%;">
+                                <small style="color: var(--text-secondary); font-size: 0.72rem; margin-top: 4px; display: block;">Weeks you won't work.</small>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" for="rate-hours">Billable Hours / Week</label>
+                                <input type="number" id="rate-hours" class="form-input" value="25" placeholder="e.g. 25" style="width: 100%;">
+                                <small style="color: var(--text-secondary); font-size: 0.72rem; margin-top: 4px; display: block;">Hours billed to clients.</small>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" for="rate-tax">Estimated Tax Rate (%)</label>
+                            <input type="number" id="rate-tax" class="form-input" value="25" placeholder="e.g. 25" style="width: 100%;" min="0" max="99">
+                            <small style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 4px; display: block;">Income and self-employment tax rate percentage.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Outputs Section -->
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 30px; display: flex; flex-direction: column; gap: 24px; height: 100%; justify-content: space-between;">
+                    <div>
+                        <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 24px; color: var(--accent-primary); border-bottom: 1px dashed var(--border-color); padding-bottom: 10px;">Calculated Targets</h2>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 20px;">
+                            <div>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Recommended Hourly Rate</div>
+                                <div id="result-hourly" style="font-size: 2.5rem; font-weight: 800; color: var(--text-primary); line-height: 1;">$0.00</div>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                                <div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Equivalent Daily Rate</div>
+                                    <div id="result-daily" style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-top: 4px;">$0.00</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Annual Billable Hours</div>
+                                    <div id="result-hours-total" style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-top: 4px;">0</div>
+                                </div>
+                            </div>
+
+                            <div style="border-top: 1px solid var(--border-color); padding-top: 15px;">
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Required Annual Gross Revenue</div>
+                                <div id="result-gross" style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin-top: 4px;">$0.00</div>
+                                <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 2px;">Total billing needed to cover expenses and taxes, leaving you with your desired net income.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px dashed var(--border-color); padding-top: 24px; text-align: center; margin-top: 20px;">
+                        <a href="/login?tab=register" class="btn btn-primary" style="display: block; text-align: center; padding: 12px 20px;">Start Invoicing with this Rate</a>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -1704,21 +1799,21 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <!-- Data Layer -->
-    <script src="js/db.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/sync.js"></script>
-    <script src="js/invoices.js"></script>
-    <script src="js/customers.js"></script>
-    <script src="js/products.js"></script>
-    <script src="js/company.js"></script>
+    <script src="/js/db.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/sync.js"></script>
+    <script src="/js/invoices.js"></script>
+    <script src="/js/customers.js"></script>
+    <script src="/js/products.js"></script>
+    <script src="/js/company.js"></script>
 
     <!-- UI Layer -->
-    <script src="js/ui.js"></script>
-    <script src="js/router.js"></script>
-    <script src="js/dashboard.js"></script>
-    <script src="js/pdf.js"></script>
+    <script src="/js/ui.js"></script>
+    <script src="/js/router.js"></script>
+    <script src="/js/dashboard.js"></script>
+    <script src="/js/pdf.js"></script>
 
     <!-- Main App -->
-    <script src="js/app.js"></script>
+    <script src="/js/app.js"></script>
 </body>
 </html>
