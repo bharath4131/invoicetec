@@ -46,6 +46,14 @@
     {
       "source": "/preview/:id",
       "destination": "/index.html"
+    },
+    {
+      "source": "/guide/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/generator/:path*",
+      "destination": "/index.html"
     }
   ]
 }

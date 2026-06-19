@@ -1977,6 +1977,25 @@
     // ═══════════════════════════════════════════════════
 
     // ─── Show App Shell ───────────────────────────────
+    // Helper to hide all custom marketing pages
+    function hideGuidePages() {
+        const guideInvoice = document.getElementById('guide-invoice-page');
+        const guideTerms = document.getElementById('guide-terms-page');
+        if (guideInvoice) guideInvoice.style.display = 'none';
+        if (guideTerms) guideTerms.style.display = 'none';
+    }
+
+    function resetLandingPageSEO() {
+        const badge = document.querySelector('.landing-hero-badge');
+        const title = document.querySelector('.landing-hero-title');
+        const desc = document.querySelector('.landing-hero-desc');
+
+        if (badge) badge.textContent = '🔒 Local-First & Private';
+        if (title) title.innerHTML = 'Create Beautiful Invoices <span>Instantly</span>';
+        if (desc) desc.textContent = 'InvoiceTec is a professional invoice generator built for freelancers, agencies, and small businesses. Create, manage, and download PDF invoices securely—all from your browser.';
+    }
+
+    // ─── Show App Shell ───────────────────────────────
     window.showAppShell = function () {
         const user = Auth.getCurrentUser();
         if (!user) return;
@@ -1987,6 +2006,7 @@
 
         document.getElementById('auth-page').style.display = 'none';
         document.getElementById('landing-page').style.display = 'none';
+        hideGuidePages();
         document.getElementById('app-shell').style.display = '';
 
         // Update user info in sidebar and header
@@ -2002,6 +2022,7 @@
         document.getElementById('auth-page').style.display = '';
         document.getElementById('app-shell').style.display = 'none';
         document.getElementById('landing-page').style.display = 'none';
+        hideGuidePages();
 
         // Read query parameter and toggle tabs accordingly
         const tab = Router.getQueryParam('tab');
@@ -2018,6 +2039,8 @@
         document.getElementById('landing-page').style.display = '';
         document.getElementById('auth-page').style.display = 'none';
         document.getElementById('app-shell').style.display = 'none';
+        hideGuidePages();
+        resetLandingPageSEO();
 
         // Dynamically toggle landing buttons based on authentication state
         const isLoggedIn = Auth.isLoggedIn();
@@ -2039,6 +2062,62 @@
             heroPrimaryBtn.textContent = 'Start Generating Free';
             heroPrimaryBtn.href = '/login?tab=register';
         }
+    };
+
+    window.showGuideInvoicePage = function () {
+        document.getElementById('landing-page').style.display = 'none';
+        document.getElementById('auth-page').style.display = 'none';
+        document.getElementById('app-shell').style.display = 'none';
+        hideGuidePages();
+        
+        const el = document.getElementById('guide-invoice-page');
+        if (el) el.style.display = 'block';
+    };
+
+    window.showGuideTermsPage = function () {
+        document.getElementById('landing-page').style.display = 'none';
+        document.getElementById('auth-page').style.display = 'none';
+        document.getElementById('app-shell').style.display = 'none';
+        hideGuidePages();
+        
+        const el = document.getElementById('guide-terms-page');
+        if (el) el.style.display = 'block';
+    };
+
+    window.showDeveloperGenerator = function () {
+        window.showLandingPage();
+        
+        const badge = document.querySelector('.landing-hero-badge');
+        const title = document.querySelector('.landing-hero-title');
+        const desc = document.querySelector('.landing-hero-desc');
+
+        if (badge) badge.textContent = '💻 Software Developer Edition';
+        if (title) title.innerHTML = 'Create Beautiful Invoices for <span>Developer Projects</span>';
+        if (desc) desc.textContent = 'InvoiceTec Developer Edition is a private invoice maker for freelance programmers, software engineers, and dev agencies. Build code and bill clients securely—all in your local browser.';
+    };
+
+    window.showDesignerGenerator = function () {
+        window.showLandingPage();
+
+        const badge = document.querySelector('.landing-hero-badge');
+        const title = document.querySelector('.landing-hero-title');
+        const desc = document.querySelector('.landing-hero-desc');
+
+        if (badge) badge.textContent = '🎨 Graphic Designer Edition';
+        if (title) title.innerHTML = 'Create Beautiful Invoices for <span>Design Clients</span>';
+        if (desc) desc.textContent = 'InvoiceTec Design Edition is an elegant, client-side invoice maker for graphic designers, branding studios, and creative directors. Showcase professionalism and invoice securely.';
+    };
+
+    window.showPhotographerGenerator = function () {
+        window.showLandingPage();
+
+        const badge = document.querySelector('.landing-hero-badge');
+        const title = document.querySelector('.landing-hero-title');
+        const desc = document.querySelector('.landing-hero-desc');
+
+        if (badge) badge.textContent = '📷 Photographer Edition';
+        if (title) title.innerHTML = 'Create Beautiful Invoices for <span>Photo Shoots</span>';
+        if (desc) desc.textContent = 'InvoiceTec Photography Edition is a fast, local-first invoice generator for freelance photographers, videographers, and studio editors. Bill shoots and client projects privately.';
     };
 
     // ─── Dashboard ────────────────────────────────────

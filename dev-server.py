@@ -5,16 +5,11 @@ import socketserver
 PORT = 8000
 
 class SPADevServerHandler(http.server.SimpleHTTPRequestHandler):
-    def do_GET(self):
-        # Translate the URL path to a local filesystem path
-        path = self.translate_path(self.path)
-        
-        # Check if the requested path corresponds to an actual file on disk
-        if not os.path.exists(path) or os.path.isdir(path):
-            # If the file doesn't exist (e.g., /dashboard), fallback to index.html for SPA router
-            self.path = '/index.html'
-            
-        return super().do_GET()
+    def translate_path(self, path):
+        default_path = super().translate_path(path)
+        if not os.path.exists(default_path) or os.path.isdir(default_path):
+            return super().translate_path('/index.html')
+        return default_path
 
 if __name__ == '__main__':
     socketserver.TCPServer.allow_reuse_address = True

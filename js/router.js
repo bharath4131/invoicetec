@@ -18,7 +18,12 @@ window.Router = (function () {
     { pattern: '/preview/:id',  pageId: 'preview-invoice-page', handler: 'showPreviewInvoice' },
     { pattern: '/customers',    pageId: 'customers-page',       handler: 'showCustomers' },
     { pattern: '/products',     pageId: 'products-page',        handler: 'showProducts' },
-    { pattern: '/settings',     pageId: 'settings-page',        handler: 'showSettings' }
+    { pattern: '/settings',     pageId: 'settings-page',        handler: 'showSettings' },
+    { pattern: '/guide/how-to-write-an-invoice', pageId: 'guide-invoice-page', handler: 'showGuideInvoicePage', isPublic: true },
+    { pattern: '/guide/payment-terms-explained', pageId: 'guide-terms-page',    handler: 'showGuideTermsPage',    isPublic: true },
+    { pattern: '/generator/software-developer', pageId: 'landing-page',        handler: 'showDeveloperGenerator', isPublic: true },
+    { pattern: '/generator/graphic-designer',   pageId: 'landing-page',        handler: 'showDesignerGenerator',  isPublic: true },
+    { pattern: '/generator/photographer',       pageId: 'landing-page',        handler: 'showPhotographerGenerator', isPublic: true }
   ];
 
   var routeMeta = {
@@ -61,6 +66,26 @@ window.Router = (function () {
     '/settings': {
       title: 'Settings | InvoiceTec',
       desc: 'Configure company profile, invoice default currencies, tax defaults, and Cloud Sync.'
+    },
+    '/guide/how-to-write-an-invoice': {
+      title: 'How to Write an Invoice: Free Guide for Freelancers | InvoiceTec',
+      desc: 'Learn step-by-step how to write a professional invoice. Discover required billing fields, layout choices, and payment terms to get paid faster.'
+    },
+    '/guide/payment-terms-explained': {
+      title: 'Invoice Payment Terms Explained: Net 30, Net 15 & More | InvoiceTec',
+      desc: 'Understand invoice payment terms. Learn what Net 30, Net 15, PIA, and COD mean, and how to choose the right terms for your freelance business.'
+    },
+    '/generator/software-developer': {
+      title: 'Free Invoice Generator for Software Developers & Engineers | InvoiceTec',
+      desc: 'Create, manage, and download professional developer invoices. Local-first, private billing templates built for programmers and dev agencies.'
+    },
+    '/generator/graphic-designer': {
+      title: 'Free Invoice Generator for Graphic Designers & Creatives | InvoiceTec',
+      desc: 'Create beautiful design invoices for your clients. Elegant, private invoice templates built for freelance designers and branding studios.'
+    },
+    '/generator/photographer': {
+      title: 'Free Photography Invoice Generator & Receipt Maker | InvoiceTec',
+      desc: 'Draft photography invoices instantly. Choose templates, manage customer listings, and generate print-ready PDF invoices for photo shoots.'
     }
   };
 
