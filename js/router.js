@@ -9,13 +9,13 @@ window.Router = (function () {
   // ── Route definitions ───────────────────────────────────────
   // Maps URL paths to { pageId, handler }
   var routeDefs = [
-    { pattern: '/landing',      pageId: 'landing-page',         handler: 'showLandingPage',    isPublic: true },
+    { pattern: '/',             pageId: 'landing-page',         handler: 'showLandingPage',    isPublic: true },
     { pattern: '/login',        pageId: 'auth-page',            handler: 'showAuthPage',       isPublic: true },
     { pattern: '/dashboard',    pageId: 'dashboard-page',       handler: 'showDashboard' },
     { pattern: '/invoices',     pageId: 'invoices-page',        handler: 'showInvoices' },
-    { pattern: '/create',       pageId: 'create-invoice-page',  handler: 'showCreateInvoice' },
-    { pattern: '/edit/:id',     pageId: 'create-invoice-page',  handler: 'showEditInvoice' },
-    { pattern: '/preview/:id',  pageId: 'preview-invoice-page', handler: 'showPreviewInvoice' },
+    { pattern: '/create',       pageId: 'create-invoice-page',  handler: 'showCreateInvoice',  isPublic: true },
+    { pattern: '/edit/:id',     pageId: 'create-invoice-page',  handler: 'showEditInvoice',    isPublic: true },
+    { pattern: '/preview/:id',  pageId: 'preview-invoice-page', handler: 'showPreviewInvoice', isPublic: true },
     { pattern: '/customers',    pageId: 'customers-page',       handler: 'showCustomers' },
     { pattern: '/products',     pageId: 'products-page',        handler: 'showProducts' },
     { pattern: '/settings',     pageId: 'settings-page',        handler: 'showSettings' },
@@ -24,11 +24,16 @@ window.Router = (function () {
     { pattern: '/generator/software-developer', pageId: 'landing-page',        handler: 'showDeveloperGenerator', isPublic: true },
     { pattern: '/generator/graphic-designer',   pageId: 'landing-page',        handler: 'showDesignerGenerator',  isPublic: true },
     { pattern: '/generator/photographer',       pageId: 'landing-page',        handler: 'showPhotographerGenerator', isPublic: true },
-    { pattern: '/tools/rate-calculator',        pageId: 'tools-rate-page',     handler: 'showRateCalculator', isPublic: true }
+    { pattern: '/tools/rate-calculator',        pageId: 'tools-rate-page',     handler: 'showRateCalculator', isPublic: true },
+    { pattern: '/hourly-rate-calculator',        pageId: 'tools-rate-page',     handler: 'showRateCalculator', isPublic: true },
+    { pattern: '/blog/how-to-write-invoice',     pageId: 'guide-invoice-page',  handler: 'showGuideInvoicePage', isPublic: true },
+    { pattern: '/blog/payment-terms-explained',  pageId: 'guide-terms-page',    handler: 'showGuideTermsPage',    isPublic: true },
+    { pattern: '/privacy',                       pageId: 'privacy-page',        handler: 'showPrivacyPage',       isPublic: true },
+    { pattern: '/tools/time-tracker',            pageId: 'tools-time-tracker-page', handler: 'showPublicTimeTracker', isPublic: true }
   ];
 
   var routeMeta = {
-    '/landing': {
+    '/': {
       title: 'InvoiceTec — Professional Invoice Generator',
       desc: 'Create, manage, and download beautiful invoices as PDF. Free, fast, and fully private.'
     },
@@ -91,6 +96,26 @@ window.Router = (function () {
     '/tools/rate-calculator': {
       title: 'Free Freelance Hourly Rate Calculator | InvoiceTec',
       desc: 'Calculate your ideal freelance hourly and daily rate based on desired income, taxes, vacation time, and business expenses. Free pricing calculator for freelancers.'
+    },
+    '/hourly-rate-calculator': {
+      title: 'Free Freelance Hourly Rate Calculator | InvoiceTec',
+      desc: 'Calculate your ideal freelance hourly and daily rate based on desired income, taxes, vacation time, and business expenses. Free pricing calculator for freelancers.'
+    },
+    '/blog/how-to-write-invoice': {
+      title: 'How to Write an Invoice: Free Guide for Freelancers | InvoiceTec',
+      desc: 'Learn step-by-step how to write a professional invoice. Discover required billing fields, layout choices, and payment terms to get paid faster.'
+    },
+    '/blog/payment-terms-explained': {
+      title: 'Invoice Payment Terms Explained: Net 30, Net 15 & More | InvoiceTec',
+      desc: 'Understand invoice payment terms. Learn what Net 30, Net 15, PIA, and COD mean, and how to choose the right terms for your freelance business.'
+    },
+    '/privacy': {
+      title: 'Privacy Policy & Local-First Security | InvoiceTec',
+      desc: 'Learn about our local-first browser storage structure using IndexedDB, our Wave/Zoho comparisons, and our offline BIP-39 recovery seed verification.'
+    },
+    '/tools/time-tracker': {
+      title: 'Free Freelancer Time Tracker | InvoiceTec',
+      desc: 'Track billable client hours offline. Save task duration, rate per hour, and export logs to invoice sandbox in one click.'
     }
   };
 
@@ -156,14 +181,19 @@ window.Router = (function () {
       cleanPath = path.substring(0, qIndex);
     }
 
-    // Default / empty → landing (if not logged in) or dashboard (if logged in)
+    // If path is exactly /landing, redirect to /
+    if (cleanPath === '/landing') {
+      go('/');
+      return;
+    }
+
+    // Default / empty → dashboard (if logged in) or stay on / (if guest)
     if (!cleanPath || cleanPath === '/' || cleanPath === '/index.html') {
       if (window.Auth && Auth.isLoggedIn()) {
         go('/dashboard');
-      } else {
-        go('/landing');
+        return;
       }
-      return;
+      cleanPath = '/';
     }
 
     // Auth guard: if logged in and going to login → dashboard
@@ -211,7 +241,7 @@ window.Router = (function () {
     showPage(matched.pageId);
 
     // Update Document Title and Meta Description for SEO
-    var meta = routeMeta[matched.pattern] || routeMeta['/landing'];
+    var meta = routeMeta[matched.pattern] || routeMeta['/'];
     document.title = meta.title;
     var metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {

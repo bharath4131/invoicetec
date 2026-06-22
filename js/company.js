@@ -29,6 +29,9 @@ window.Company = {
         website: (data.website || '').trim(),
         taxId: (data.taxId || '').trim(),
         logo: data.logo || null,
+        defaultCurrency: data.defaultCurrency || 'USD',
+        defaultAccentColor: data.defaultAccentColor || '#2563eb',
+        defaultFontFamily: data.defaultFontFamily || 'Inter',
         updatedAt: new Date().toISOString()
       };
 

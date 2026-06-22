@@ -79,7 +79,7 @@ window.Invoices = {
           discountAmount: invoiceData.discountAmount || 0,
           total: invoiceData.total || 0,
           notes: invoiceData.notes || '',
-          template: invoiceData.template || 'default',
+          template: invoiceData.template || 'classic',
           currency: invoiceData.currency || 'USD',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -132,8 +132,11 @@ window.Invoices = {
           discountAmount: invoiceData.discountAmount || 0,
           total: invoiceData.total || 0,
           notes: invoiceData.notes || '',
-          template: invoiceData.template || 'default',
+          template: invoiceData.template || 'classic',
           currency: invoiceData.currency || 'USD',
+          accentColor: invoiceData.accentColor || '#2563eb',
+          fontFamily: invoiceData.fontFamily || 'Inter',
+          showWatermark: invoiceData.showWatermark !== undefined ? invoiceData.showWatermark : true,
           updatedAt: new Date().toISOString()
         });
 
@@ -394,7 +397,10 @@ window.Invoices = {
         discountAmount: original.discountAmount,
         total: original.total,
         notes: original.notes,
-        template: original.template
+        template: original.template || 'classic',
+        accentColor: original.accentColor || '#2563eb',
+        fontFamily: original.fontFamily || 'Inter',
+        showWatermark: original.showWatermark !== undefined ? original.showWatermark : true
       };
 
       var newItems = (original.items || []).map(function (item) {
@@ -402,6 +408,7 @@ window.Invoices = {
           description: item.description,
           quantity: item.quantity,
           rate: item.rate,
+          discount: item.discount || 0,
           amount: item.amount
         };
       });

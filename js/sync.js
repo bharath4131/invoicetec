@@ -398,10 +398,12 @@ window.Sync = (function () {
       const firebaseUid = user.supabaseId;
 
       const localData = await getLocalData(localUserId);
+      // Sanitize undefined fields from IndexedDB objects (Firestore does not support undefined values)
+      const sanitizedData = JSON.parse(JSON.stringify(localData));
       const firestoreDb = client.firestore();
       
       await firestoreDb.collection('user_sync').doc(firebaseUid).set({
-        data: localData,
+        data: sanitizedData,
         updatedAt: new Date().toISOString()
       }, { merge: true });
 

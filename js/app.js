@@ -61,27 +61,48 @@
                 if (client) {
                     client.auth().onAuthStateChanged(async (firebaseUser) => {
                         if (firebaseUser) {
-                            let existingUser = await db.users.where('email').equals(firebaseUser.email.toLowerCase()).first();
+                            // Use direct index lookup to avoid ConstraintError on duplicate email
+                            const normalizedEmail = firebaseUser.email.trim().toLowerCase();
+                            let existingUser = await db.users.where('email').equals(normalizedEmail).first();
+                            if (!existingUser) {
+                                const allUsers = await db.users.toArray();
+                                existingUser = allUsers.find(u =>
+                                    (u.supabaseId && u.supabaseId === firebaseUser.uid) ||
+                                    (u.email && u.email.trim().toLowerCase() === normalizedEmail)
+                                ) || null;
+                            }
                             let localUserId;
                             if (existingUser) {
                                 existingUser.supabaseId = firebaseUser.uid;
+                                existingUser.email = normalizedEmail;
                                 if (firebaseUser.displayName) {
                                     existingUser.name = firebaseUser.displayName;
                                 }
                                 await db.users.put(existingUser);
                                 localUserId = existingUser.id;
                             } else {
-                                localUserId = await db.users.add({
-                                    name: firebaseUser.displayName || 'Cloud User',
-                                    email: firebaseUser.email.toLowerCase(),
-                                    supabaseId: firebaseUser.uid,
-                                    createdAt: new Date().toISOString()
-                                });
+                                try {
+                                    localUserId = await db.users.add({
+                                        name: firebaseUser.displayName || 'Cloud User',
+                                        email: normalizedEmail,
+                                        supabaseId: firebaseUser.uid,
+                                        createdAt: new Date().toISOString()
+                                    });
+                                } catch (constraintErr) {
+                                    // Race condition: recover by finding the existing record
+                                    console.warn('[Auth] onAuthStateChanged ConstraintError — recovering:', constraintErr.message);
+                                    existingUser = await db.users.where('email').equals(normalizedEmail).first();
+                                    if (existingUser) {
+                                        existingUser.supabaseId = firebaseUser.uid;
+                                        await db.users.put(existingUser);
+                                        localUserId = existingUser.id;
+                                    } else { throw constraintErr; }
+                                }
                             }
                             var sessionObj = {
                                 id: localUserId,
                                 name: firebaseUser.displayName || (existingUser ? existingUser.name : 'Cloud User'),
-                                email: firebaseUser.email.toLowerCase(),
+                                email: normalizedEmail,
                                 supabaseId: firebaseUser.uid
                             };
                             
@@ -445,8 +466,6 @@
             const email = document.getElementById('register-email').value.trim();
             const password = document.getElementById('register-password').value;
             const confirm = document.getElementById('register-confirm').value;
-            const question = document.getElementById('register-question').value;
-            const answer = document.getElementById('register-answer').value;
 
             const btn = document.getElementById('register-submit');
 
@@ -459,7 +478,7 @@
             btn.innerHTML = '<span class="spinner"></span> Creating account...';
 
             try {
-                const res = await Auth.register(name, email, password, question, answer);
+                const res = await Auth.register(name, email, password);
                 if (res && res.emailVerificationRequired) {
                     UI.showToast('Account registered! Please check your email to verify your account before logging in.', 'warning', 10000);
                     form.reset();
@@ -595,7 +614,7 @@
         document.getElementById('logout-btn').addEventListener('click', async (e) => {
             e.preventDefault();
             await Auth.logout();
-            Router.go('/landing');
+            Router.go('/');
             UI.showToast('Signed out successfully', 'info');
             closeDropdown();
         });
@@ -675,7 +694,7 @@
         // Settings logout
         document.getElementById('settings-logout-btn')?.addEventListener('click', async () => {
             await Auth.logout();
-            Router.go('/landing');
+            Router.go('/');
             UI.showToast('Signed out', 'info');
         });
 
@@ -1121,7 +1140,10 @@
             discountAmount,
             total,
             notes: document.getElementById('inv-notes').value.trim(),
-            template
+            template,
+            accentColor: document.getElementById('inv-accent-color') ? document.getElementById('inv-accent-color').value : '#2563eb',
+            fontFamily: document.getElementById('inv-font-family') ? document.getElementById('inv-font-family').value : 'Inter',
+            showWatermark: document.getElementById('inv-show-watermark') ? document.getElementById('inv-show-watermark').checked : true
         };
 
         try {
@@ -1510,7 +1532,9 @@
                 country: document.getElementById('company-country').value.trim(),
                 taxId: document.getElementById('company-tax-id').value.trim(),
                 defaultCurrency: document.getElementById('company-default-currency').value,
-                logo: logoPreview.src && logoPreview.style.display !== 'none' ? logoPreview.src : null
+                logo: logoPreview.src && logoPreview.style.display !== 'none' ? logoPreview.src : null,
+                defaultAccentColor: document.getElementById('company-default-accent-color') ? document.getElementById('company-default-accent-color').value : '#2563eb',
+                defaultFontFamily: document.getElementById('company-default-font-family') ? document.getElementById('company-default-font-family').value : 'Inter'
             };
 
             try {
@@ -1812,8 +1836,34 @@
                 const company = await Company.get(user.id);
                 const activeTemplate = document.querySelector('#preview-template-selector .template-option.active');
                 const template = activeTemplate ? activeTemplate.getAttribute('data-template') : 'classic';
+                // Respect preview watermark toggle override
+                const watermarkToggle = document.getElementById('preview-show-watermark');
+                if (watermarkToggle) {
+                    invoice.showWatermark = watermarkToggle.checked;
+                }
                 PDF.download(invoice, company, template);
                 UI.showToast('PDF downloading...', 'success');
+            } catch (err) {
+                UI.showToast('PDF generation failed: ' + err.message, 'error');
+            }
+        });
+
+        document.getElementById('preview-open-tab-btn').addEventListener('click', async () => {
+            const id = Router.getParam('id');
+            if (!id) return;
+            try {
+                const invoice = await Invoices.get(parseInt(id));
+                const user = Auth.getCurrentUser();
+                const company = await Company.get(user.id);
+                const activeTemplate = document.querySelector('#preview-template-selector .template-option.active');
+                const template = activeTemplate ? activeTemplate.getAttribute('data-template') : 'classic';
+                // Respect preview watermark toggle override
+                const watermarkToggle = document.getElementById('preview-show-watermark');
+                if (watermarkToggle) {
+                    invoice.showWatermark = watermarkToggle.checked;
+                }
+                PDF.open(invoice, company, template);
+                UI.showToast('Opening PDF in new tab...', 'success');
             } catch (err) {
                 UI.showToast('PDF generation failed: ' + err.message, 'error');
             }
@@ -1835,6 +1885,16 @@
         setupTemplateSelector('preview-template-selector', async (template) => {
             await renderPreview();
         });
+
+        // Watermark toggle for preview — re-render when changed
+        const previewWatermarkToggle = document.getElementById('preview-show-watermark');
+        if (previewWatermarkToggle) {
+            previewWatermarkToggle.addEventListener('change', async () => {
+                // Mark that the user has manually toggled this, so we don't reset it on re-render
+                previewWatermarkToggle.dataset.userChanged = '1';
+                await renderPreview();
+            });
+        }
     }
 
     async function shareInvoiceHelper(id, method) {
@@ -2350,6 +2410,25 @@
         previousInvoiceCurrency = defaultCurrency;
         updateFormCurrencyLabels();
 
+        if (company) {
+            if (document.getElementById('inv-accent-color')) {
+                document.getElementById('inv-accent-color').value = company.defaultAccentColor || '#2563eb';
+            }
+            if (document.getElementById('inv-font-family')) {
+                document.getElementById('inv-font-family').value = company.defaultFontFamily || 'Inter';
+            }
+        } else {
+            if (document.getElementById('inv-accent-color')) {
+                document.getElementById('inv-accent-color').value = '#2563eb';
+            }
+            if (document.getElementById('inv-font-family')) {
+                document.getElementById('inv-font-family').value = 'Inter';
+            }
+        }
+        if (document.getElementById('inv-show-watermark')) {
+            document.getElementById('inv-show-watermark').checked = true;
+        }
+
         // Reset template selector
         document.querySelectorAll('#inv-template-selector .template-option').forEach(o => o.classList.remove('active'));
         document.querySelector('#inv-template-selector .template-option[data-template="classic"]').classList.add('active');
@@ -2396,6 +2475,16 @@
             document.getElementById('inv-discount-value').value = invoice.discountValue || 0;
             document.getElementById('inv-notes').value = invoice.notes || '';
 
+            if (document.getElementById('inv-accent-color')) {
+                document.getElementById('inv-accent-color').value = invoice.accentColor || '#2563eb';
+            }
+            if (document.getElementById('inv-font-family')) {
+                document.getElementById('inv-font-family').value = invoice.fontFamily || 'Inter';
+            }
+            if (document.getElementById('inv-show-watermark')) {
+                document.getElementById('inv-show-watermark').checked = invoice.showWatermark !== false;
+            }
+
             // Populate customer dropdown and select
             await populateCustomerDropdown();
             document.getElementById('inv-customer').value = invoice.customerId;
@@ -2428,6 +2517,11 @@
     window.showPreviewInvoice = async function () {
         showAppShell();
         document.getElementById('header-title').textContent = 'Invoice Preview';
+        // Reset the watermark toggle flag so each invoice loads from its saved state
+        const watermarkToggle = document.getElementById('preview-show-watermark');
+        if (watermarkToggle) {
+            delete watermarkToggle.dataset.userChanged;
+        }
         await renderPreview();
     };
 
@@ -2455,6 +2549,17 @@
             document.querySelectorAll('#preview-template-selector .template-option').forEach(o => o.classList.remove('active'));
             const tmplOption = document.querySelector(`#preview-template-selector .template-option[data-template="${template}"]`);
             if (tmplOption) tmplOption.classList.add('active');
+
+            // Sync watermark toggle with saved value (only on first render, not when toggle was manually changed)
+            const watermarkToggle = document.getElementById('preview-show-watermark');
+            if (watermarkToggle && !watermarkToggle.dataset.userChanged) {
+                watermarkToggle.checked = (invoice.showWatermark !== false);
+            }
+
+            // Override invoice watermark with preview toggle state
+            if (watermarkToggle) {
+                invoice.showWatermark = watermarkToggle.checked;
+            }
 
             PDF.preview(invoice, company, template);
         } catch (err) {
@@ -2848,6 +2953,13 @@
                 document.getElementById('company-country').value = company.country || '';
                 document.getElementById('company-tax-id').value = company.taxId || '';
                 document.getElementById('company-default-currency').value = company.defaultCurrency || 'USD';
+
+                if (document.getElementById('company-default-accent-color')) {
+                    document.getElementById('company-default-accent-color').value = company.defaultAccentColor || '#2563eb';
+                }
+                if (document.getElementById('company-default-font-family')) {
+                    document.getElementById('company-default-font-family').value = company.defaultFontFamily || 'Inter';
+                }
 
                 if (company.logo) {
                     document.getElementById('company-logo-preview').src = company.logo;

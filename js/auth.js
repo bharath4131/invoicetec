@@ -70,7 +70,7 @@ window.Auth = {
    * @param {string} password
    * @returns {Promise<Object|number>} The new user's id or registration result object.
    */
-  async register(name, email, password, securityQuestion = '', securityAnswer = '') {
+  async register(name, email, password, recoveryPhrase = '') {
     try {
       // --- Validation ---
       if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -86,8 +86,9 @@ window.Auth = {
       if (!password || typeof password !== 'string' || password.length < 8) {
         throw new Error('Password must be at least 8 characters long.');
       }
-      if (!securityQuestion || !securityAnswer || securityAnswer.trim().length === 0) {
-        throw new Error('Security question and answer are required for recovery.');
+      // If recoveryPhrase is provided, it must be a 12-word mnemonic
+      if (recoveryPhrase && recoveryPhrase.trim().split(/\s+/).length !== 12) {
+        throw new Error('Recovery phrase must be exactly 12 words.');
       }
 
       // --- Firebase Sign Up if Enabled ---
@@ -112,14 +113,13 @@ window.Auth = {
             let localUserId;
 
             var tempSalt = crypto.getRandomValues(new Uint8Array(16));
-            var tempHashed = await this.hashPassword(securityAnswer.trim().toLowerCase(), tempSalt);
+            var tempHashed = recoveryPhrase ? await this.hashPassword(recoveryPhrase.trim().toLowerCase(), tempSalt) : null;
 
             if (existingUser) {
               existingUser.supabaseId = user.uid;
               existingUser.name = name.trim();
-              existingUser.securityQuestion = securityQuestion;
               existingUser.salt = this.bufferToHex(tempSalt);
-              existingUser.securityAnswerHash = this.bufferToHex(tempHashed);
+              existingUser.recoveryHash = tempHashed ? this.bufferToHex(tempHashed) : null;
               await db.users.put(existingUser);
               localUserId = existingUser.id;
             } else {
@@ -127,9 +127,8 @@ window.Auth = {
                 name: name.trim(),
                 email: email.trim().toLowerCase(),
                 supabaseId: user.uid,
-                securityQuestion: securityQuestion,
                 salt: this.bufferToHex(tempSalt),
-                securityAnswerHash: this.bufferToHex(tempHashed),
+                recoveryHash: tempHashed ? this.bufferToHex(tempHashed) : null,
                 createdAt: new Date().toISOString()
               });
             }
@@ -177,17 +176,19 @@ window.Auth = {
         throw new Error('An account with this email already exists.');
       }
 
+      const oldUser = this.getCurrentUser();
+      const oldUserId = oldUser ? oldUser.id : null;
+
       var salt = crypto.getRandomValues(new Uint8Array(16));
       var hashedPassword = await this.hashPassword(password, salt);
-      var hashedAnswer = await this.hashPassword(securityAnswer.trim().toLowerCase(), salt);
+      var hashedRecovery = recoveryPhrase ? await this.hashPassword(recoveryPhrase.trim().toLowerCase(), salt) : null;
 
       var userId = await db.users.add({
         name: name.trim(),
         email: email.trim().toLowerCase(),
         passwordHash: this.bufferToHex(hashedPassword),
         salt: this.bufferToHex(salt),
-        securityQuestion: securityQuestion,
-        securityAnswerHash: this.bufferToHex(hashedAnswer),
+        recoveryHash: hashedRecovery ? this.bufferToHex(hashedRecovery) : null,
         createdAt: new Date().toISOString()
       });
 
@@ -197,6 +198,9 @@ window.Auth = {
         email: email.trim().toLowerCase()
       };
       sessionStorage.setItem('currentUser', JSON.stringify(session));
+
+      // Migrate local offline data to user
+      await this.migrateLocalDataToUser(userId, oldUserId);
 
       return userId;
     } catch (error) {
@@ -229,26 +233,49 @@ window.Auth = {
               password
             );
             const user = userCredential.user;
+            const normalizedEmail = user.email.trim().toLowerCase();
 
-            // Match or create local user
-            let users = await db.users.toArray();
-            let existingUser = users.find(u => u.email.trim().toLowerCase() === email.trim().toLowerCase() || (u.supabaseId && u.supabaseId === user.uid));
+            // Prefer a direct index lookup over a full table scan
+            let existingUser = await db.users.where('email').equals(normalizedEmail).first();
+            if (!existingUser) {
+              const allUsers = await db.users.toArray();
+              existingUser = allUsers.find(u =>
+                (u.supabaseId && u.supabaseId === user.uid) ||
+                (u.email && u.email.trim().toLowerCase() === normalizedEmail)
+              ) || null;
+            }
+
             let localUserId;
 
             if (existingUser) {
               existingUser.supabaseId = user.uid;
+              existingUser.email = normalizedEmail; // normalize casing
               if (user.displayName) {
                 existingUser.name = user.displayName;
               }
               await db.users.put(existingUser);
               localUserId = existingUser.id;
             } else {
-              localUserId = await db.users.add({
-                name: user.displayName || 'Cloud User',
-                email: user.email.toLowerCase(),
-                supabaseId: user.uid,
-                createdAt: new Date().toISOString()
-              });
+              try {
+                localUserId = await db.users.add({
+                  name: user.displayName || 'Cloud User',
+                  email: normalizedEmail,
+                  supabaseId: user.uid,
+                  createdAt: new Date().toISOString()
+                });
+              } catch (constraintErr) {
+                // Recover from a duplicate-email race condition
+                console.warn('[Auth] Duplicate email on Firebase login add — recovering:', constraintErr.message);
+                existingUser = await db.users.where('email').equals(normalizedEmail).first();
+                if (existingUser) {
+                  existingUser.supabaseId = user.uid;
+                  if (user.displayName) existingUser.name = user.displayName;
+                  await db.users.put(existingUser);
+                  localUserId = existingUser.id;
+                } else {
+                  throw constraintErr;
+                }
+              }
             }
 
             const oldUser = this.getCurrentUser();
@@ -258,7 +285,7 @@ window.Auth = {
             var session = {
               id: localUserId,
               name: user.displayName || (existingUser ? existingUser.name : 'Cloud User'),
-              email: user.email.toLowerCase(),
+              email: normalizedEmail,
               supabaseId: user.uid
             };
             sessionStorage.setItem('currentUser', JSON.stringify(session));
@@ -305,12 +332,18 @@ window.Auth = {
         throw new Error('Incorrect password. Please try again.');
       }
 
+      const oldUser = this.getCurrentUser();
+      const oldUserId = oldUser ? oldUser.id : null;
+
       var session = {
         id: user.id,
         name: user.name,
         email: user.email
       };
       sessionStorage.setItem('currentUser', JSON.stringify(session));
+
+      // Migrate local offline data to user
+      await this.migrateLocalDataToUser(user.id, oldUserId);
 
       return session;
     } catch (error) {
@@ -336,25 +369,56 @@ window.Auth = {
       const result = await client.auth().signInWithPopup(provider);
       const user = result.user;
 
-      // Match or create local user
-      let users = await db.users.toArray();
-      let existingUser = users.find(u => u.email.trim().toLowerCase() === user.email.trim().toLowerCase() || (u.supabaseId && u.supabaseId === user.uid));
+      // ── Step 1: Try a precise DB-index lookup by email first (most reliable) ──
+      const normalizedEmail = user.email.trim().toLowerCase();
+      let existingUser = await db.users.where('email').equals(normalizedEmail).first();
+
+      // ── Step 2: Fallback — scan all users for supabaseId match (handles
+      //    users whose email was stored with different casing) ──
+      if (!existingUser) {
+        const allUsers = await db.users.toArray();
+        existingUser = allUsers.find(u =>
+          (u.supabaseId && u.supabaseId === user.uid) ||
+          (u.email && u.email.trim().toLowerCase() === normalizedEmail)
+        ) || null;
+      }
+
       let localUserId;
+      const isNewUser = !existingUser;
 
       if (existingUser) {
+        // Update the existing record in-place
         existingUser.supabaseId = user.uid;
         if (user.displayName) {
           existingUser.name = user.displayName;
         }
-        await db.users.put(existingUser);
+        existingUser.email = normalizedEmail; // Normalise casing in DB
+        await db.users.put(existingUser);     // put() = upsert, never throws on duplicate
         localUserId = existingUser.id;
       } else {
-        localUserId = await db.users.add({
-          name: user.displayName || 'Google User',
-          email: user.email.toLowerCase(),
-          supabaseId: user.uid,
-          createdAt: new Date().toISOString()
-        });
+        // Brand-new Google user — use put() with a generated record so a
+        // duplicate-email race condition cannot crash the app
+        try {
+          localUserId = await db.users.add({
+            name: user.displayName || 'Google User',
+            email: normalizedEmail,
+            supabaseId: user.uid,
+            createdAt: new Date().toISOString()
+          });
+        } catch (constraintErr) {
+          // Another record with this email slipped in (race or previous session) —
+          // recover by doing a fresh lookup and updating that record instead
+          console.warn('[Auth] Duplicate email on Google add — recovering:', constraintErr.message);
+          existingUser = await db.users.where('email').equals(normalizedEmail).first();
+          if (existingUser) {
+            existingUser.supabaseId = user.uid;
+            if (user.displayName) existingUser.name = user.displayName;
+            await db.users.put(existingUser);
+            localUserId = existingUser.id;
+          } else {
+            throw constraintErr; // Genuinely unexpected — re-throw
+          }
+        }
       }
 
       const oldUser = this.getCurrentUser();
@@ -364,12 +428,12 @@ window.Auth = {
       var session = {
         id: localUserId,
         name: user.displayName || (existingUser ? existingUser.name : 'Google User'),
-        email: user.email.toLowerCase(),
+        email: normalizedEmail,
         supabaseId: user.uid
       };
       sessionStorage.setItem('currentUser', JSON.stringify(session));
 
-      // Migrate offline data
+      // Migrate any offline data created before Google sign-in
       await this.migrateLocalDataToUser(localUserId, oldUserId);
 
       // Pull & Sync
@@ -379,7 +443,7 @@ window.Auth = {
         console.error('Initial sync pull on Google login failed:', syncErr);
       }
 
-      return session;
+      return { session: session, isNewUser: isNewUser };
     } catch (err) {
       console.error('Google Sign-In failed:', err);
       throw new Error(err.message);
@@ -393,30 +457,62 @@ window.Auth = {
    */
   async migrateLocalDataToUser(newUserId, oldUserId) {
     if (!newUserId || !oldUserId || newUserId === oldUserId) return;
+    console.log(`[DEBUG] Starting local data migration from "${oldUserId}" to "${newUserId}"...`);
 
     try {
-      await db.transaction('rw', db.invoices, db.customers, db.companyProfiles, async () => {
+      await db.transaction('rw', db.invoices, db.customers, db.companyProfiles, db.products, db.settings, async () => {
         // Migrate invoices
         const invoices = await db.invoices.where('userId').equals(oldUserId).toArray();
+        console.log(`[DEBUG] Found ${invoices.length} invoices to migrate for userId "${oldUserId}".`);
         for (const inv of invoices) {
           await db.invoices.update(inv.id, { userId: newUserId });
         }
 
         // Migrate customers
         const customers = await db.customers.where('userId').equals(oldUserId).toArray();
+        console.log(`[DEBUG] Found ${customers.length} customers to migrate for userId "${oldUserId}".`);
         for (const cust of customers) {
           await db.customers.update(cust.id, { userId: newUserId });
         }
 
         // Migrate company profiles
         const profiles = await db.companyProfiles.where('userId').equals(oldUserId).toArray();
+        console.log(`[DEBUG] Found ${profiles.length} company profiles to migrate for userId "${oldUserId}".`);
         for (const prof of profiles) {
-          await db.companyProfiles.update(prof.id, { userId: newUserId });
+          const existingProfile = await db.companyProfiles.where('userId').equals(newUserId).first();
+          if (existingProfile) {
+            await db.companyProfiles.delete(prof.id);
+          } else {
+            await db.companyProfiles.update(prof.id, { userId: newUserId });
+          }
+        }
+
+        // Migrate products
+        if (db.products) {
+          const products = await db.products.where('userId').equals(oldUserId).toArray();
+          console.log(`[DEBUG] Found ${products.length} products to migrate for userId "${oldUserId}".`);
+          for (const prod of products) {
+            await db.products.update(prod.id, { userId: newUserId });
+          }
+        }
+
+        // Migrate settings
+        if (db.settings) {
+          const settings = await db.settings.where('userId').equals(oldUserId).toArray();
+          console.log(`[DEBUG] Found ${settings.length} settings to migrate for userId "${oldUserId}".`);
+          for (const set of settings) {
+            const existingSettings = await db.settings.where('userId').equals(newUserId).first();
+            if (existingSettings) {
+              await db.settings.delete(set.id);
+            } else {
+              await db.settings.update(set.id, { userId: newUserId });
+            }
+          }
         }
       });
-      console.log(`Successfully migrated local data from userId ${oldUserId} to ${newUserId}`);
+      console.log(`[DEBUG] Successfully migrated local data from userId "${oldUserId}" to "${newUserId}"`);
     } catch (err) {
-      console.error('Data migration failed:', err);
+      console.error('[DEBUG] Data migration failed:', err);
     }
   },
 
@@ -427,7 +523,14 @@ window.Auth = {
   getCurrentUser() {
     try {
       var data = sessionStorage.getItem('currentUser');
-      if (!data) return null;
+      if (!data) {
+        // Return a mock guest user to enable anonymous guest mode throughout the app
+        return {
+          id: 'guest',
+          name: 'Guest User',
+          email: 'guest@invoicetec.com'
+        };
+      }
       return JSON.parse(data);
     } catch (error) {
       return null;
@@ -439,7 +542,11 @@ window.Auth = {
    * @returns {boolean}
    */
   isLoggedIn() {
-    return this.getCurrentUser() !== null;
+    try {
+      return sessionStorage.getItem('currentUser') !== null;
+    } catch (e) {
+      return false;
+    }
   },
 
   /**
@@ -480,6 +587,9 @@ window.Auth = {
             await currentUser.delete();
           }
         } catch (err) {
+          if (err.code === 'auth/requires-recent-login') {
+            throw new Error('For security reasons, deleting your account requires you to have signed in recently. Please sign out, log back in, and try deleting your account again.');
+          }
           throw new Error('Failed to delete account from cloud: ' + err.message);
         }
       }
@@ -516,6 +626,69 @@ window.Auth = {
       } catch (err) {
         console.error('Firebase signOut during account deletion failed:', err);
       }
+    }
+  },
+
+  WORDLIST: [
+    "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract",
+    "abuse", "access", "accident", "account", "accuse", "achieve", "acid", "acoustic",
+    "acquire", "across", "act", "action", "actor", "actress", "actual", "adapt",
+    "add", "addict", "address", "adjust", "admit", "adult", "advance", "advice",
+    "aerobic", "affair", "afford", "afraid", "again", "age", "agent", "agree",
+    "ahead", "aim", "air", "airport", "alarm", "album", "alcohol", "alert",
+    "alien", "alike", "alive", "all", "alley", "allow", "almost", "alone",
+    "along", "alpha", "already", "also", "alter", "always", "amateur", "amazing",
+    "among", "amount", "amused", "analyst", "anchor", "ancient", "anger", "angle",
+    "angry", "animal", "ankle", "announce", "annual", "another", "answer", "antenna",
+    "antique", "anxiety", "any", "apart", "apology", "appear", "apple", "approve",
+    "april", "arch", "arctic", "area", "arena", "argue", "arm", "armed",
+    "armor", "army", "around", "arrange", "arrest", "arrive", "arrow", "art",
+    "artefact", "artist", "artwork", "ask", "aspect", "assault", "asset", "assist",
+    "assume", "asthma", "athlete", "atom", "attack", "attend", "attitude", "attract"
+  ],
+
+  generateMnemonic() {
+    const array = new Uint8Array(12);
+    crypto.getRandomValues(array);
+    const words = [];
+    for (let i = 0; i < 12; i++) {
+      const wordIndex = array[i] % 128;
+      words.push(this.WORDLIST[wordIndex]);
+    }
+    return words.join(' ');
+  },
+
+  async verifySeedAndResetPassword(email, seedPhrase, newPassword) {
+    try {
+      const emailLower = email.trim().toLowerCase();
+      const users = await db.users.toArray();
+      const user = users.find(u => u.email.toLowerCase() === emailLower);
+      if (!user) {
+        throw new Error('Account not found with this email.');
+      }
+      if (!user.recoveryHash) {
+        throw new Error('Recovery phrase was not set up for this account.');
+      }
+
+      const salt = this.hexToBuffer(user.salt);
+      const hashedRecovery = await this.hashPassword(seedPhrase.trim().toLowerCase(), salt);
+      if (this.bufferToHex(hashedRecovery) !== user.recoveryHash) {
+        return false;
+      }
+
+      // Reset
+      const newSalt = crypto.getRandomValues(new Uint8Array(16));
+      const hashedPassword = await this.hashPassword(newPassword, newSalt);
+      const newHashedRecovery = await this.hashPassword(seedPhrase.trim().toLowerCase(), newSalt);
+
+      user.passwordHash = this.bufferToHex(hashedPassword);
+      user.salt = this.bufferToHex(newSalt);
+      user.recoveryHash = this.bufferToHex(newHashedRecovery);
+
+      await db.users.put(user);
+      return true;
+    } catch (e) {
+      throw new Error(e.message);
     }
   },
 
@@ -599,11 +772,10 @@ window.Auth = {
    * @returns {Object|null} Current user or null.
    */
   requireAuth() {
-    var user = this.getCurrentUser();
-    if (!user) {
+    if (!this.isLoggedIn()) {
       Router.go('/login');
       return null;
     }
-    return user;
+    return this.getCurrentUser();
   }
 };

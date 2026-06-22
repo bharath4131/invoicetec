@@ -18,16 +18,16 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://invoicetec.vercel.app/">
-    <meta property="og:title" content="InvoiceTec — Professional Invoice Generator">
-    <meta property="og:description" content="Create, manage, and download beautiful invoices as PDF. Free, fast, and fully private.">
-    <meta property="og:image" content="https://invoicetec.vercel.app/icon-512.png">
+    <meta property="og:title" content="InvoiceTec - 100% Free Private Invoice Generator">
+    <meta property="og:description" content="Generate professional invoices completely in your browser. Zero server tracking, zero fees, 100% offline support.">
+    <meta property="og:image" content="https://invoicetec.vercel.app/og-preview-image.png">
 
     <!-- Twitter Cards -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://invoicetec.vercel.app/">
-    <meta property="twitter:title" content="InvoiceTec — Professional Invoice Generator">
-    <meta property="twitter:description" content="Create, manage, and download beautiful invoices as PDF. Free, fast, and fully private.">
-    <meta property="twitter:image" content="https://invoicetec.vercel.app/icon-512.png">
+    <meta property="twitter:title" content="InvoiceTec - 100% Free Private Invoice Generator">
+    <meta property="twitter:description" content="Generate professional invoices completely in your browser. Zero server tracking, zero fees, 100% offline support.">
+    <meta property="twitter:image" content="https://invoicetec.vercel.app/og-preview-image.png">
 
     <!-- Schema.org Structured Data (JSON-LD WebApplication) -->
     <script type="application/ld+json">
@@ -69,13 +69,110 @@
 
     <!-- Vercel Analytics & Speed Insights -->
     <script>
-      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+        const s1 = document.createElement('script');
+        s1.defer = true;
+        s1.src = '/_vercel/insights/script.js';
+        document.head.appendChild(s1);
+
+        window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+        const s2 = document.createElement('script');
+        s2.defer = true;
+        s2.src = '/_vercel/speed-insights/script.js';
+        document.head.appendChild(s2);
+      }
     </script>
-    <script defer src="/_vercel/insights/script.js"></script>
     <script>
-      window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+    (function() {
+      var originalConsoleError = console.error;
+      console.error = function() {
+        originalConsoleError.apply(console, arguments);
+        const errText = Array.from(arguments).map(arg => {
+          if (arg && arg.message) return arg.message;
+          if (typeof arg === 'object') return JSON.stringify(arg);
+          return String(arg);
+        }).join(' ');
+
+        // Ignore AdSense errors/warnings
+        if (errText.indexOf('adsbygoogle') !== -1 || errText.indexOf('availableWidth') !== -1 || errText.indexOf('pagead') !== -1) {
+          return;
+        }
+
+        const logDiv = document.getElementById('debug-log-panel') || createDebugPanel();
+        const errEl = document.createElement('div');
+        errEl.style.color = '#f87171';
+        errEl.style.padding = '4px 8px';
+        errEl.style.borderBottom = '1px solid #374151';
+        errEl.textContent = '[console.error] ' + errText;
+        logDiv.appendChild(errEl);
+      };
+      
+      window.addEventListener('error', function(e) {
+        if (e.message && (e.message.indexOf('adsbygoogle') !== -1 || e.message.indexOf('availableWidth') !== -1)) {
+          return;
+        }
+        if (e.filename && e.filename.indexOf('pagead') !== -1) {
+          return;
+        }
+
+        const logDiv = document.getElementById('debug-log-panel') || createDebugPanel();
+        const errEl = document.createElement('div');
+        errEl.style.color = '#ef4444';
+        errEl.style.padding = '4px 8px';
+        errEl.style.borderBottom = '1px solid #374151';
+        errEl.textContent = '[ERROR] ' + e.message + ' at ' + e.filename + ':' + e.lineno;
+        logDiv.appendChild(errEl);
+      });
+      
+      window.addEventListener('unhandledrejection', function(e) {
+        const reason = e.reason ? (e.reason.message || String(e.reason)) : '';
+        if (reason.indexOf('adsbygoogle') !== -1 || reason.indexOf('availableWidth') !== -1 || reason.indexOf('pagead') !== -1) {
+          return;
+        }
+
+        const logDiv = document.getElementById('debug-log-panel') || createDebugPanel();
+        const errEl = document.createElement('div');
+        errEl.style.color = '#ef4444';
+        errEl.style.padding = '4px 8px';
+        errEl.style.borderBottom = '1px solid #374151';
+        errEl.textContent = '[Promise Rejection] ' + (e.reason ? (e.reason.message || e.reason) : 'Unknown reason');
+        logDiv.appendChild(errEl);
+      });
+
+      function createDebugPanel() {
+        const panel = document.createElement('div');
+        panel.id = 'debug-log-panel';
+        panel.style.position = 'fixed';
+        panel.style.bottom = '10px';
+        panel.style.right = '10px';
+        panel.style.width = '380px';
+        panel.style.maxHeight = '250px';
+        panel.style.overflowY = 'auto';
+        panel.style.background = 'rgba(17, 24, 39, 0.95)';
+        panel.style.color = '#fff';
+        panel.style.fontSize = '12px';
+        panel.style.fontFamily = 'monospace';
+        panel.style.border = '1px solid #374151';
+        panel.style.borderRadius = '6px';
+        panel.style.zIndex = '999999';
+        panel.style.padding = '8px';
+        
+        const title = document.createElement('div');
+        title.style.fontWeight = 'bold';
+        title.style.borderBottom = '1px solid #374151';
+        title.style.paddingBottom = '4px';
+        title.style.marginBottom = '4px';
+        title.style.display = 'flex';
+        title.style.justifyContent = 'space-between';
+        title.innerHTML = '<span>Console Logs / Errors</span><button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#9ca3af;cursor:pointer;">X</button>';
+        panel.appendChild(title);
+        
+        document.body.appendChild(panel);
+        return panel;
+      }
+    })();
     </script>
-    <script defer src="/_vercel/speed-insights/script.js"></script>
 </head>
 <body>
     <!-- ═══════════════════════════════════════════ -->
@@ -84,7 +181,7 @@
     <div id="landing-page" class="page" style="display: none;">
         <!-- Header -->
         <header class="landing-header">
-            <a href="/landing" class="landing-brand">
+            <a href="/" class="landing-brand">
                 <span class="landing-brand-icon">📄</span>
                 <span>InvoiceTec</span>
             </a>
@@ -95,9 +192,13 @@
                 <a href="#landing-about" class="landing-nav-link">About</a>
                 <a href="#landing-contact" class="landing-nav-link">Contact</a>
             </nav>
-            <div class="landing-auth-btn">
+            <div class="landing-auth-btn" style="display: flex; align-items: center; gap: 8px;">
+                <a href="https://github.com/bharath4131/invoicetec" target="_blank" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;" title="Star on GitHub">
+                    <svg height="14" width="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                    <span>GitHub</span>
+                </a>
                 <a href="/login" class="btn btn-secondary btn-sm" id="landing-signin-btn">Sign In</a>
-                <a href="/login?tab=register" class="btn btn-primary btn-sm" id="landing-signup-btn">Get Started</a>
+                <a href="/create" class="btn btn-primary btn-sm" id="landing-signup-btn">Get Started</a>
             </div>
         </header>
 
@@ -106,8 +207,27 @@
             <div class="landing-hero-badge">🔒 Local-First & Private</div>
             <h1 class="landing-hero-title">Create Beautiful Invoices <span>Instantly</span></h1>
             <p class="landing-hero-desc">InvoiceTec is a professional invoice generator built for freelancers, agencies, and small businesses. Create, manage, and download PDF invoices securely—all from your browser.</p>
+            
+            <!-- Privacy Shield Callout -->
+            <div class="privacy-shield-callout" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; max-width: 800px; margin: 32px auto; text-align: left; background: rgba(37, 99, 235, 0.06); border: 1px solid rgba(37, 99, 235, 0.15); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm);">
+                <div style="display: flex; gap: 14px; align-items: flex-start;">
+                    <span style="font-size: 1.8rem; line-height: 1;">🛡️</span>
+                    <div>
+                        <strong style="color: var(--text-primary); font-size: 0.95rem; display: block; margin-bottom: 4px;">Zero Server Storage</strong>
+                        <span style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.4; display: block;">Your invoices are stored completely on your device using IndexedDB. Your client data never touches a server.</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 14px; align-items: flex-start;">
+                    <span style="font-size: 1.8rem; line-height: 1;">🌐</span>
+                    <div>
+                        <strong style="color: var(--text-primary); font-size: 0.95rem; display: block; margin-bottom: 4px;">Works 100% Offline</strong>
+                        <span style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.4; display: block;">Turn off your internet and try it. Once loaded, the application operates entirely offline. Your data never leaves your computer.</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="landing-hero-ctas">
-                <a href="/login?tab=register" class="btn btn-primary" id="landing-hero-primary-btn" style="padding: 12px 28px; font-size: 1.05rem;">Start Generating Free</a>
+                <a href="/create" class="btn btn-primary" id="landing-hero-primary-btn" style="padding: 12px 28px; font-size: 1.05rem;">Start Generating Free</a>
                 <a href="#landing-features" class="btn btn-secondary" style="padding: 12px 28px; font-size: 1.05rem;">Explore Features</a>
             </div>
         </section>
@@ -322,7 +442,7 @@
         <footer class="landing-footer">
             <div class="footer-content">
                 <div class="footer-brand-side">
-                    <a href="/landing" class="landing-brand">
+                    <a href="/" class="landing-brand">
                         <span class="landing-brand-icon">📄</span>
                         <span>InvoiceTec</span>
                     </a>
@@ -353,9 +473,16 @@
                     </div>
                 </div>
             </div>
-            <div class="footer-bottom">
-                <span>© 2026 InvoiceTec. All rights reserved.</span>
-                <span>Designed for privacy.</span>
+            <div class="footer-bottom" style="display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                <div>
+                    <span>© 2026 InvoiceTec. All rights reserved.</span> | 
+                    <span>Designed for privacy.</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-tertiary);">
+                    <a href="https://vercel.com" target="_blank" style="color: var(--text-tertiary); text-decoration: none; transition: color var(--transition-fast);" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-tertiary)'">Hosted securely on Vercel</a> | 
+                    <span>100% Client-Side Privacy</span> | 
+                    <a href="https://github.com/bharath4131/invoicetec" target="_blank" style="color: var(--text-tertiary); text-decoration: none; transition: color var(--transition-fast);" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-tertiary)'">Open Source on GitHub ⭐️</a>
+                </div>
             </div>
         </footer>
     </div>
@@ -363,12 +490,12 @@
     <!-- ═══════════ GUIDE: HOW TO WRITE AN INVOICE ═══════════ -->
     <div id="guide-invoice-page" class="page" style="display: none; padding: 0 20px;">
         <header class="landing-header" style="max-width: 1200px; margin: 0 auto;">
-            <a href="/landing" class="landing-brand">
+            <a href="/" class="landing-brand">
                 <span class="landing-brand-icon">📄</span>
                 <span>InvoiceTec</span>
             </a>
             <div>
-                <a href="/landing" class="btn btn-secondary btn-sm">← Back to Home</a>
+                <a href="/" class="btn btn-secondary btn-sm">← Back to Home</a>
             </div>
         </header>
         <main style="max-width: 800px; margin: 40px auto; line-height: 1.8; color: var(--text-primary);">
@@ -401,7 +528,7 @@
                 <p>Instead of manually compiling invoices in Word or Excel, you can use **InvoiceTec** to create, format, and download beautiful PDF invoices instantly. Your data stays 100% private and stored locally in your browser.</p>
                 
                 <div style="margin-top: 32px; text-align: center; border-top: 1px dashed var(--border-color); padding-top: 30px;">
-                    <a href="/login?tab=register" class="btn btn-primary" style="padding: 12px 32px; font-size: 1.05rem;">Create Your Free Invoice Now</a>
+                    <a href="/create" class="btn btn-primary" style="padding: 12px 32px; font-size: 1.05rem;">Create Your Free Invoice Now</a>
                 </div>
             </article>
         </main>
@@ -410,12 +537,12 @@
     <!-- ═══════════ GUIDE: INVOICE PAYMENT TERMS EXPLAINED ═══════════ -->
     <div id="guide-terms-page" class="page" style="display: none; padding: 0 20px;">
         <header class="landing-header" style="max-width: 1200px; margin: 0 auto;">
-            <a href="/landing" class="landing-brand">
+            <a href="/" class="landing-brand">
                 <span class="landing-brand-icon">📄</span>
                 <span>InvoiceTec</span>
             </a>
             <div>
-                <a href="/landing" class="btn btn-secondary btn-sm">← Back to Home</a>
+                <a href="/" class="btn btn-secondary btn-sm">← Back to Home</a>
             </div>
         </header>
         <main style="max-width: 800px; margin: 40px auto; line-height: 1.8; color: var(--text-primary);">
@@ -428,7 +555,13 @@
                 <h2 style="font-size: 1.5rem; font-weight: 700; margin-top: 32px; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">1. Standard Invoicing Terms Glossary</h2>
                 <p>Here are the most common payment terms used in business-to-business transactions:</p>
                 <ul style="margin-left: 20px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px;">
-                    <li><strong>Net 30 / Net 15:</strong> The payment is due 30 (or 15) calendar days from the invoice date. This is the most common standard term in corporate environments.</li>
+                    <li><strong>Net 30 / Net 15:</strong> The payment is due 30 (or 15) calendar days from the invoice date. This is the most common standard term in corporate environments.
+                        <div style="margin-top: 8px; margin-bottom: 8px;">
+                            <a href="/create" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 0.8rem; background: var(--accent-primary); border-radius: var(--radius-sm); border: none; text-decoration: none; cursor: pointer; color: white;">
+                                Apply Net 30 Terms to a Free Invoice Template Instantly ↗️
+                            </a>
+                        </div>
+                    </li>
                     <li><strong>Due on Receipt:</strong> The invoice must be paid immediately upon receipt. Best for project milestones or creative deliveries.</li>
                     <li><strong>PIA (Payment in Advance):</strong> Requires the client to pay the total fee before any work begins. Recommended for new clients or large capital requirements.</li>
                     <li><strong>COD (Cash on Delivery):</strong> Payment is collected at the exact moment the service or product is delivered.</li>
@@ -444,7 +577,7 @@
                 </ul>
 
                 <div style="margin-top: 32px; text-align: center; border-top: 1px dashed var(--border-color); padding-top: 30px;">
-                    <a href="/login?tab=register" class="btn btn-primary" style="padding: 12px 32px; font-size: 1.05rem;">Start Billing with InvoiceTec</a>
+                    <a href="/create" class="btn btn-primary" style="padding: 12px 32px; font-size: 1.05rem;">Start Billing with InvoiceTec</a>
                 </div>
             </article>
         </main>
@@ -453,12 +586,12 @@
     <!-- ═══════════ TOOL: FREELANCE HOURLY RATE CALCULATOR ═══════════ -->
     <div id="tools-rate-page" class="page" style="display: none; padding: 0 20px;">
         <header class="landing-header" style="max-width: 1200px; margin: 0 auto;">
-            <a href="/landing" class="landing-brand">
+            <a href="/" class="landing-brand">
                 <span class="landing-brand-icon">📄</span>
                 <span>InvoiceTec</span>
             </a>
             <div>
-                <a href="/landing" class="btn btn-secondary btn-sm">← Back to Home</a>
+                <a href="/" class="btn btn-secondary btn-sm">← Back to Home</a>
             </div>
         </header>
         <main style="max-width: 1000px; margin: 40px auto; color: var(--text-primary);">
@@ -536,9 +669,179 @@
                         </div>
                     </div>
 
-                    <div style="border-top: 1px dashed var(--border-color); padding-top: 24px; text-align: center; margin-top: 20px;">
-                        <a href="/login?tab=register" class="btn btn-primary" style="display: block; text-align: center; padding: 12px 20px;">Start Invoicing with this Rate</a>
+                    <div style="border-top: 1px dashed var(--border-color); padding-top: 24px; display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+                        <a href="/create" class="btn btn-primary" style="display: block; text-align: center; padding: 12px 20px;">Start Invoicing with this Rate</a>
+                        <button type="button" id="btn-share-rate" class="btn btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px 20px; font-weight: 600;">
+                            <span>🔗 Share Rate Breakdown</span>
+                        </button>
                     </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- PRIVACY HUB PAGE -->
+    <div id="privacy-page" class="page" style="display: none; padding: 0 20px;">
+        <header class="landing-header" style="max-width: 1200px; margin: 0 auto;">
+            <a href="/" class="landing-brand">
+                <span class="landing-brand-icon">📄</span>
+                <span>InvoiceTec</span>
+            </a>
+            <div>
+                <a href="/" class="btn btn-secondary btn-sm">← Back to Home</a>
+            </div>
+        </header>
+        <main style="max-width: 1000px; margin: 40px auto; color: var(--text-primary);">
+            <div style="text-align: center; margin-bottom: 50px;">
+                <h1 style="font-size: 2.2rem; font-weight: 800; line-height: 1.3; margin-bottom: 12px;">Privacy & Local-First Authority Hub</h1>
+                <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto; font-size: 1.1rem;">Learn why high-earning freelancers and software consultants trust InvoiceTec. Zero tracking, zero servers, 100% data ownership.</p>
+            </div>
+
+            <!-- IndexedDB Explainer Section -->
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 32px; margin-bottom: 40px; box-shadow: var(--shadow-md);">
+                <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                    <span>💾</span> How It Works: Local-First Browser Storage
+                </h2>
+                <p style="margin-bottom: 24px; color: var(--text-secondary); line-height: 1.6;">
+                    Unlike traditional invoicing apps (like Wave or Zoho) that store your client lists, invoices, and margins on their servers, InvoiceTec stores everything inside your browser's secure <strong>IndexedDB</strong> storage. Your database is completely sandboxed on your device.
+                </p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: stretch; margin-bottom: 16px;">
+                    <div style="background: var(--bg-tertiary); border: 1.5px solid var(--border-color); border-radius: var(--radius-md); padding: 20px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                        <span style="font-size: 2.5rem; margin-bottom: 12px;">🏢</span>
+                        <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: #ef4444;">Centralized Servers (Wave/Zoho)</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Your data is sent, processed, and saved on their remote clouds. Vulnerable to database breaches, targeted ads, and data mining.</p>
+                    </div>
+                    <div style="background: var(--bg-tertiary); border: 1.5px solid var(--accent-primary); border-radius: var(--radius-md); padding: 20px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;">
+                        <span style="position: absolute; top: 12px; right: 12px; background: var(--accent-primary); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 20px;">SAFE</span>
+                        <span style="font-size: 2.5rem; margin-bottom: 12px; color: var(--accent-primary);">💻</span>
+                        <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: var(--accent-primary);">InvoiceTec (Local-First DB)</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Your data never leaves your device. Everything runs inside a sandboxed client database. Absolute privacy by default.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparison Table Section -->
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 32px; margin-bottom: 40px; box-shadow: var(--shadow-md);">
+                <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                    <span>⚖️</span> Platform Comparison: Privacy & Ownership
+                </h2>
+                <div class="table-responsive" style="border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="background: var(--bg-tertiary); border-bottom: 1.5px solid var(--border-color);">
+                                <th style="padding: 14px 16px; font-weight: 700;">Feature</th>
+                                <th style="padding: 14px 16px; font-weight: 700; color: var(--accent-primary);">InvoiceTec</th>
+                                <th style="padding: 14px 16px; font-weight: 700; color: var(--text-secondary);">Zoho Invoice</th>
+                                <th style="padding: 14px 16px; font-weight: 700; color: var(--text-secondary);">Wave Accounting</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 14px 16px; font-weight: 600;">Data Storage</td>
+                                <td style="padding: 14px 16px; color: var(--accent-primary); font-weight: 600;">Browser IndexedDB (100% Client-Side)</td>
+                                <td style="padding: 14px 16px; color: var(--text-secondary);">Zoho Servers (Cloud Database)</td>
+                                <td style="padding: 14px 16px; color: var(--text-secondary);">Wave Servers (Cloud Database)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 14px 16px; font-weight: 600;">Advertising & Mining</td>
+                                <td style="padding: 14px 16px; color: var(--accent-primary); font-weight: 600;">None. Zero telemetry/analytics tracking.</td>
+                                <td style="padding: 14px 16px; color: var(--text-secondary);">Profile building and tier upsell prompts.</td>
+                                <td style="padding: 14px 16px; color: var(--text-secondary);">Targeted advertising based on transaction data.</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 14px 16px; font-weight: 600;">Account Password Recovery</td>
+                                <td style="padding: 14px 16px; color: var(--accent-primary); font-weight: 600;">Cryptographic 12-Word Mnemonic Phrase</td>
+                                <td style="padding: 14px 16px; color: var(--text-secondary);">Centralized reset links via company email.</td>
+                                <td style="padding: 14px 16px; color: var(--text-secondary);">Centralized reset links via company email.</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 14px 16px; font-weight: 600;">Limits on Invoices/Clients</td>
+                                <td style="padding: 14px 16px; color: var(--accent-primary); font-weight: 600;">Unlimited (Free & Uncapped)</td>
+                                <td style="padding: 14px 16px; color: var(--text-secondary);">Free plan caps at 3 clients.</td>
+                                <td style="padding: 14px 16px; color: var(--text-secondary);">Forces payment gateway fees to remove caps.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Master Recovery Seed Explainer -->
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 32px; box-shadow: var(--shadow-md);">
+                <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                    <span>🔑</span> Master Recovery Seed Explainer
+                </h2>
+                <p style="margin-bottom: 16px; color: var(--text-secondary); line-height: 1.6;">
+                    Since InvoiceTec stores passwords as localized salted PBKDF2 hashes on your computer, there is no centralized database reset mechanism. To guarantee you can restore your offline credentials, we use a <strong>12-word recovery phrase</strong> (similar to hardware crypto wallets).
+                </p>
+                <div style="background: var(--bg-tertiary); border-left: 4px solid var(--accent-primary); padding: 16px; border-radius: 0 var(--radius-md) var(--radius-md) 0; margin-bottom: 16px;">
+                    <p style="font-size: 0.9rem; font-weight: 600; margin-bottom: 6px;">How the cryptographic security works:</p>
+                    <ul style="margin-left: 20px; font-size: 0.85rem; color: var(--text-secondary); list-style-type: disc; display: flex; flex-direction: column; gap: 6px;">
+                        <li>Your recovery seed is hashed client-side with a unique salt using 100,000 PBKDF2 iterations.</li>
+                        <li>Only the hash is stored in IndexedDB. The actual phrase is never saved, cached, or transmitted.</li>
+                        <li>Verifying your seed phrase regenerates the PBKDF2 hashes offline, letting you rewrite your local credentials.</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- PUBLIC STANDALONE TIME TRACKER PAGE -->
+    <div id="tools-time-tracker-page" class="page" style="display: none; padding: 0 20px;">
+        <header class="landing-header" style="max-width: 1200px; margin: 0 auto;">
+            <a href="/" class="landing-brand">
+                <span class="landing-brand-icon">📄</span>
+                <span>InvoiceTec</span>
+            </a>
+            <div>
+                <a href="/" class="btn btn-secondary btn-sm">← Back to Home</a>
+            </div>
+        </header>
+        <main style="max-width: 800px; margin: 40px auto; color: var(--text-primary);">
+            <div style="text-align: center; margin-bottom: 40px;">
+                <h1 style="font-size: 2.2rem; font-weight: 800; line-height: 1.3; margin-bottom: 8px;">Freelancer Time Tracker</h1>
+                <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto; font-size: 1.1rem;">Track billable hours for your freelance tasks. Convert your logs directly into a professional invoice with one click.</p>
+            </div>
+
+            <!-- Standalone Timer Widget -->
+            <div style="background: var(--bg-secondary); border: 1.5px solid var(--border-color); border-radius: var(--radius-lg); padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 24px;">
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;">
+                    <div id="public-tracker-display" style="font-family: monospace; font-size: 4rem; font-weight: 800; text-align: center; color: var(--text-primary); padding: 20px 40px; background: var(--bg-tertiary); border-radius: var(--radius-md); letter-spacing: 2px; width: 100%; border: 1px solid var(--border-color);">
+                        00:00:00
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;" id="public-tracker-status-bar">
+                        <span id="public-tracker-dot" style="width: 10px; height: 10px; border-radius: 50%; background: var(--text-tertiary);"></span>
+                        <span id="public-tracker-status" style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Idle</span>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" for="public-tracker-task">Task Description</label>
+                        <input type="text" id="public-tracker-task" class="form-input" placeholder="e.g. Website Design Mockups" style="width: 100%;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" for="public-tracker-rate">Hourly Rate ($)</label>
+                        <input type="number" id="public-tracker-rate" class="form-input" value="60" style="width: 100%;">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 16px;">
+                    <button type="button" id="btn-public-tracker-start" class="btn btn-primary" style="flex: 1; padding: 12px 20px; font-weight: 700; height: 46px;">
+                        ▶ Start Timer
+                    </button>
+                    <button type="button" id="btn-public-tracker-pause" class="btn btn-secondary" style="flex: 1; padding: 12px 20px; font-weight: 700; height: 46px; display: none;">
+                        ⏸ Pause
+                    </button>
+                    <button type="button" id="btn-public-tracker-stop" class="btn btn-danger" style="flex: 1; padding: 12px 20px; font-weight: 700; height: 46px; display: none;">
+                        ⏹ Reset Timer
+                    </button>
+                </div>
+
+                <div style="border-top: 1px dashed var(--border-color); padding-top: 24px; text-align: center; margin-top: 8px;">
+                    <button type="button" id="btn-public-tracker-convert" class="btn btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; font-size: 1.05rem;">
+                        ⚡ Convert to Invoice Sandbox
+                    </button>
+                    <small style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 8px; display: block;">Loads the tracked task name, total logged time, computed invoice total, and rate per hour directly into the invoice generator creator sandbox.</small>
                 </div>
             </div>
         </main>
@@ -625,19 +928,9 @@
                         <label class="form-label" for="register-confirm">Confirm Password</label>
                         <input type="password" id="register-confirm" class="form-input" placeholder="Repeat your password" required minlength="8" autocomplete="new-password">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label" for="register-question">Security Question (For offline password recovery)</label>
-                        <select id="register-question" class="form-input form-select" required>
-                            <option value="">-- Select a Question --</option>
-                            <option value="pet">What was the name of your first pet?</option>
-                            <option value="city">In what city were you born?</option>
-                            <option value="friend">What is the name of your childhood best friend?</option>
-                            <option value="school">What was the name of your primary school?</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="register-answer">Security Answer *</label>
-                        <input type="text" id="register-answer" class="form-input" placeholder="Enter answer here (case-insensitive)" required autocomplete="off">
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; margin-bottom: 16px; font-size: 0.825rem; color: var(--text-secondary); line-height: 1.5; display: flex; gap: 8px; align-items: flex-start;">
+                        <span style="font-size: 1.1rem; line-height: 1;">🔐</span>
+                        <div>To protect your privacy, InvoiceTec uses a secure <strong>12-word recovery phrase</strong> instead of centralized password resets. You will generate and verify this recovery phrase in the next step.</div>
                     </div>
                     <button type="submit" class="btn btn-primary auth-submit" id="register-submit">
                         <span>Create Account</span>
@@ -659,6 +952,10 @@
     <!-- APP SHELL (Sidebar + Main)                   -->
     <!-- ═══════════════════════════════════════════ -->
     <div id="app-shell" class="app" style="display: none;">
+        <!-- Floating Support / Buy Me a Coffee Button -->
+        <a href="https://buymeacoffee.com/bharath4131" target="_blank" id="support-developer-btn" style="position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; align-items: center; gap: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 50px; padding: 10px 18px; box-shadow: var(--shadow-md); color: var(--text-primary); text-decoration: none; font-size: 0.8rem; font-weight: 600; transition: all var(--transition-fast); cursor: pointer;">
+            <span>☕ Support the developer</span>
+        </a>
 
         <!-- Sidebar Overlay (Mobile) -->
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
@@ -700,6 +997,52 @@
                 </a>
             </nav>
 
+            <!-- Sidebar Time Tracker Widget -->
+            <div id="sidebar-time-tracker" style="margin: 12px 16px; padding: 12px 14px; background: var(--bg-secondary); border: 1.5px solid var(--border-color); border-radius: var(--radius-lg); font-size: 0.8rem; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 8px;">
+                <div id="sidebar-time-tracker-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
+                    <span style="font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                        <span>⏱️</span> Time Tracker
+                    </span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span id="tracker-status-indicator" style="width: 6px; height: 6px; border-radius: 50%; background: var(--text-tertiary);"></span>
+                        <span id="tracker-toggle-arrow" style="font-size: 0.6rem; color: var(--text-tertiary); transition: transform 0.2s;">▼</span>
+                    </div>
+                </div>
+                
+                <div id="sidebar-time-tracker-body" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div id="tracker-display" style="font-family: monospace; font-size: 1.3rem; font-weight: 700; text-align: center; color: var(--text-primary); padding: 4px 0; background: var(--bg-tertiary); border-radius: var(--radius-md); letter-spacing: 1px;">
+                        00:00:00
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <select id="tracker-client" class="form-input form-select" style="font-size: 0.75rem; height: 28px; padding: 2px 8px;">
+                            <option value="">-- Select Client --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <input type="text" id="tracker-task" class="form-input" placeholder="What are you working on?" style="font-size: 0.75rem; height: 28px; padding: 2px 8px;">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0; display: flex; gap: 6px; align-items: center;">
+                        <span style="color: var(--text-secondary); font-size: 0.75rem;">$</span>
+                        <input type="number" id="tracker-rate" class="form-input" placeholder="Rate/hr" value="50" min="0" style="font-size: 0.75rem; height: 28px; padding: 2px 8px; flex: 1;">
+                    </div>
+
+                    <div style="display: flex; gap: 6px;">
+                        <button type="button" id="btn-tracker-start" class="btn btn-primary" style="flex: 1; padding: 4px 0; font-size: 0.75rem; height: 28px;">
+                            ▶ Start
+                        </button>
+                        <button type="button" id="btn-tracker-pause" class="btn btn-secondary" style="flex: 1; padding: 4px 0; font-size: 0.75rem; height: 28px; display: none;">
+                            ⏸ Pause
+                        </button>
+                        <button type="button" id="btn-tracker-stop" class="btn btn-danger" style="flex: 1; padding: 4px 0; font-size: 0.75rem; height: 28px; display: none;">
+                            ⏹ Stop
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="sidebar-footer">
                 <div class="sidebar-user" id="sidebar-user" style="margin-bottom: 12px;">
                     <div class="avatar" id="user-avatar">U</div>
@@ -722,7 +1065,10 @@
                     <button class="btn btn-icon hamburger" id="hamburger-btn" aria-label="Toggle menu">☰</button>
                     <h2 class="header-title" id="header-title">Dashboard</h2>
                 </div>
-                <div class="header-right">
+                <div class="header-right" style="display: flex; align-items: center; gap: 8px;">
+                    <a href="https://github.com/bharath4131/invoicetec" target="_blank" class="btn btn-icon" style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; color: var(--text-secondary); text-decoration: none;" title="Star on GitHub">
+                        <svg height="18" width="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                    </a>
                     <button class="btn btn-icon theme-toggle" id="theme-toggle" title="Toggle dark mode" aria-label="Toggle theme">🌙</button>
                     <div class="dropdown" id="user-dropdown">
                         <button class="btn btn-ghost user-menu-btn" id="user-menu-btn">
@@ -946,6 +1292,11 @@
                                     <div id="inv-customer-preview" class="customer-preview" style="display:none;">
                                         <div id="inv-customer-details"></div>
                                     </div>
+                                    <div style="margin-top: 12px;">
+                                        <button type="button" class="btn btn-secondary btn-sm" id="btn-import-time-logs" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem; padding: 8px 12px; height: 36px;">
+                                            <span>⏱️</span> Import Time Logs
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -962,10 +1313,10 @@
                                     </div>
                                 </div>
 
-                                <!-- Template -->
+                                <!-- Template & Styling -->
                                 <div class="invoice-section card">
                                     <h3 class="invoice-section-title">
-                                        <span>🎨</span> Template
+                                        <span>🎨</span> Template & Styling
                                     </h3>
                                     <div class="template-selector" id="inv-template-selector">
                                         <div class="template-option active" data-template="classic">
@@ -982,6 +1333,29 @@
                                             <div class="template-preview-icon">⚡</div>
                                             <div class="template-name">Bold</div>
                                             <div class="template-desc">Dark & striking</div>
+                                        </div>
+                                    </div>
+
+                                    <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                                        <div class="form-group" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                                            <label class="form-label" for="inv-accent-color" style="margin-bottom: 0;">Accent Color</label>
+                                            <input type="color" id="inv-accent-color" value="#2563eb" style="border: none; padding: 0; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; background: none; outline: none;">
+                                        </div>
+                                        <div class="form-group" style="margin-bottom: 12px;">
+                                            <label class="form-label" for="inv-font-family">Typography</label>
+                                            <select id="inv-font-family" class="form-input">
+                                                <option value="Inter">Inter (Clean modern)</option>
+                                                <option value="Outfit">Outfit (Tech startup)</option>
+                                                <option value="Playfair Display">Playfair Display (Luxury serif)</option>
+                                                <option value="JetBrains Mono">JetBrains Mono (Developer)</option>
+                                                <option value="Lora">Lora (Classic agency serif)</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group" style="margin-top: 16px; display: flex; align-items: center; gap: 8px;">
+                                            <input type="checkbox" id="inv-show-watermark" checked style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
+                                            <label for="inv-show-watermark" class="form-label" style="margin-bottom: 0; cursor: pointer; font-size: 0.9rem; user-select: none; color: var(--text-secondary);">
+                                                Display "Created with InvoiceTec" in footer
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
@@ -1076,6 +1450,10 @@
                                 <span>💬</span>
                                 <span>WhatsApp</span>
                             </button>
+                            <button class="btn btn-secondary" id="preview-open-tab-btn">
+                                <span>🔗</span>
+                                <span>Open PDF</span>
+                            </button>
                             <button class="btn btn-secondary" id="preview-share-btn">
                                 <span>📤</span>
                                 <span>Share PDF</span>
@@ -1098,6 +1476,10 @@
                             <div class="template-option" data-template="bold">
                                 <div class="template-name">Bold</div>
                             </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+                            <input type="checkbox" id="preview-show-watermark" style="width: 15px; height: 15px; cursor: pointer; margin: 0; accent-color: var(--accent-primary);">
+                            <label for="preview-show-watermark" style="font-size: 0.8rem; color: var(--text-secondary); cursor: pointer; user-select: none; white-space: nowrap;">Show footer watermark</label>
                         </div>
                     </div>
 
@@ -1365,6 +1747,23 @@
                                     </div>
                                 </div>
 
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label" for="company-default-accent-color">Default Accent Color</label>
+                                        <input type="color" id="company-default-accent-color" value="#2563eb" style="border: none; padding: 0; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; background: none; outline: none;">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="company-default-font-family">Default Typography</label>
+                                        <select id="company-default-font-family" class="form-input">
+                                            <option value="Inter">Inter (Clean modern)</option>
+                                            <option value="Outfit">Outfit (Tech startup)</option>
+                                            <option value="Playfair Display">Playfair Display (Luxury serif)</option>
+                                            <option value="JetBrains Mono">JetBrains Mono (Developer)</option>
+                                            <option value="Lora">Lora (Classic agency serif)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
                                 <div style="display: flex; gap: 12px; margin-top: 8px;">
                                     <button type="submit" class="btn btn-primary" id="company-save-btn">
                                         <span>💾</span>
@@ -1469,7 +1868,7 @@
                                 <span>🌐</span> Cloud Database Sync
                             </h3>
                             <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 0.9rem;">
-                                Synchronize and access your invoices, customers, and business data securely across multiple devices using your account credentials.
+                                Optional End-to-End Encrypted Cloud Sync (For Multi-Device Access Only. Your data remains encrypted and private).
                             </p>
                             <form id="firebase-sync-form" autocomplete="off">
                                 <div class="form-row" style="align-items: center; margin-bottom: 16px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
@@ -1656,6 +2055,47 @@
         </div>
     </div>
 
+    <!-- REGISTRATION SEED PHRASE MODAL -->
+    <div class="modal-overlay" id="register-seed-modal-overlay">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+                    <span>🔑</span> Save Your Recovery Phrase
+                </h3>
+            </div>
+            <div class="modal-body" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-primary);">
+                <p style="margin-bottom: 12px; color: var(--text-secondary);">
+                    This 12-word recovery phrase is the <strong>only way</strong> to restore your offline account if you forget your password. Write it down and keep it safe. <strong>We cannot recover it for you!</strong>
+                </p>
+                <div style="background: var(--bg-tertiary); border: 1.5px dashed var(--border-color); border-radius: var(--radius-md); padding: 16px; margin: 16px 0; text-align: center; font-family: monospace; font-size: 1.1rem; letter-spacing: 0.5px; font-weight: 600; color: var(--accent-primary);" id="register-seed-phrase-display">
+                    <!-- 12 Words Go Here -->
+                </div>
+                <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-copy-register-seed">
+                        <span>📋</span> Copy to Clipboard
+                    </button>
+                </div>
+                <div style="border-top: 1px solid var(--border-color); padding-top: 16px;">
+                    <p style="margin-bottom: 12px; font-weight: 600;">Verify Your Phrase:</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" id="label-verify-word-a" style="font-weight: normal;"></label>
+                            <input type="text" id="verify-word-a" class="form-input" placeholder="Type word" required autocomplete="off">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" id="label-verify-word-b" style="font-weight: normal;"></label>
+                            <input type="text" id="verify-word-b" class="form-input" placeholder="Type word" required autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="padding-top: 12px; margin-top: 16px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" id="btn-register-seed-cancel">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="btn-register-seed-submit">Verify & Sign Up</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- FORGOT PASSWORD MODAL -->
     <div class="modal-overlay" id="forgot-password-modal-overlay">
         <div class="modal" style="max-width: 450px;">
@@ -1679,16 +2119,16 @@
                     </div>
                 </div>
 
-                <!-- Step 2: Local Verification (Security Question) -->
+                <!-- Step 2: Local Verification (Seed Phrase) -->
                 <div id="forgot-step-question" style="display: none;">
-                    <p style="margin-bottom: 16px; color: var(--text-secondary);">Please answer the security question you set during registration.</p>
+                    <p style="margin-bottom: 16px; color: var(--text-secondary);">Please enter your 12-word offline recovery seed phrase to reset your password.</p>
                     <div class="form-group">
-                        <label class="form-label" style="font-weight: 600;" id="forgot-question-label">Security Question</label>
-                        <input type="text" id="forgot-answer" class="form-input" placeholder="Your answer" required>
+                        <label class="form-label" style="font-weight: 600;" for="forgot-seed">12-Word Recovery Phrase</label>
+                        <textarea id="forgot-seed" class="form-input" placeholder="word1 word2 ... word12" rows="3" required style="resize: none; font-family: monospace;"></textarea>
                     </div>
                     <div class="modal-footer" style="padding-top: 12px; margin-top: 16px;">
                         <button type="button" class="btn btn-secondary" id="btn-forgot-question-back">Back</button>
-                        <button type="button" class="btn btn-primary" id="btn-forgot-question-next">Verify</button>
+                        <button type="button" class="btn btn-primary" id="btn-forgot-question-next">Verify Phrase</button>
                     </div>
                 </div>
 
@@ -1706,6 +2146,82 @@
                     <div class="modal-footer" style="padding-top: 12px; margin-top: 16px;">
                         <button type="button" class="btn btn-primary" id="btn-forgot-reset-submit" style="width: 100%;">Reset Password</button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IMPORT TIME LOGS MODAL -->
+    <div class="modal-overlay" id="time-import-modal-overlay">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+                    <span>⏱️</span> Import Client Time Logs
+                </h3>
+                <button class="btn btn-icon modal-close" id="time-import-modal-close">✕</button>
+            </div>
+            <div class="modal-body" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-primary);">
+                <p style="margin-bottom: 16px; color: var(--text-secondary);">Select the unbilled time logs you want to add to this invoice as line items.</p>
+                
+                <div style="max-height: 300px; overflow-y: auto; margin-bottom: 20px; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;" id="import-logs-table">
+                        <thead>
+                            <tr style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);">
+                                <th style="padding: 10px; width: 40px; text-align: center;"><input type="checkbox" id="chk-import-select-all"></th>
+                                <th style="padding: 10px;">Date</th>
+                                <th style="padding: 10px;">Task Description</th>
+                                <th style="padding: 10px; text-align: center;">Hours</th>
+                                <th style="padding: 10px; text-align: right;">Rate/hr</th>
+                                <th style="padding: 10px; text-align: right;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="import-logs-tbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                    <div id="import-logs-empty" style="padding: 30px; text-align: center; color: var(--text-tertiary); display: none;">
+                        No unbilled time logs found for this client.
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" id="btn-import-cancel">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="btn-import-submit" disabled>Import Selected Logs (0)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WATERMARK UNLOCK MODAL -->
+    <div class="modal-overlay" id="watermark-unlock-modal-overlay">
+        <div class="modal" style="max-width: 480px; text-align: center;">
+            <div class="modal-header">
+                <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px; justify-content: center; width: 100%;">
+                    <span>💎</span> Unlock Premium PDFs
+                </h3>
+            </div>
+            <div class="modal-body" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-primary); padding: 10px 0;">
+                <p style="margin-bottom: 20px;">
+                    Remove the "Created with InvoiceTec" watermark from your invoices free for <strong>30 days</strong> by supporting us with a share!
+                </p>
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; margin-bottom: 24px;">
+                    <p style="font-weight: 600; margin-bottom: 12px; font-size: 0.9rem;">Choose a platform to share:</p>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <a href="https://twitter.com/intent/tweet?text=I%27m%20using%20InvoiceTec%20to%20create%20professional%20invoices%20privately%20and%20locally%20in%20my%20browser.%20Check%20it%20out%20at%20https%3A%2F%2Finvoicetec.com!" target="_blank" class="btn btn-primary" id="btn-share-twitter" style="justify-content: center; background: #1DA1F2; box-shadow: none; border-radius: var(--radius-md); height: 42px; border: none; color: white;">
+                            <span>🐦 Share on X (Twitter)</span>
+                        </a>
+                        <a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Finvoicetec.com" target="_blank" class="btn btn-primary" id="btn-share-linkedin" style="justify-content: center; background: #0077b5; box-shadow: none; border-radius: var(--radius-md); height: 42px; border: none; color: white;">
+                            <span>🔗 Share on LinkedIn</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="modal-footer" style="padding-top: 12px; margin-top: 16px; display: flex; gap: 12px; justify-content: center;">
+                    <button type="button" class="btn btn-secondary" id="btn-watermark-cancel" style="width: 100px;">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="btn-watermark-unlock-confirm" style="width: 150px;">I've Shared!</button>
+                </div>
+            </div>
+        </div>
+    </div>
                 </div>
             </div>
         </div>

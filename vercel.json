@@ -24,6 +24,11 @@
   ],
   "redirects": [
     {
+      "source": "/landing",
+      "destination": "/",
+      "permanent": true
+    },
+    {
       "source": "/(.*)\\.sql",
       "destination": "/index.html",
       "permanent": false
@@ -36,7 +41,7 @@
   ],
   "rewrites": [
     {
-      "source": "/(landing|login|dashboard|invoices|create|customers|products|settings)",
+      "source": "/(login|dashboard|invoices|create|customers|products|settings|privacy)",
       "destination": "/index.html"
     },
     {
@@ -57,6 +62,14 @@
     },
     {
       "source": "/tools/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/hourly-rate-calculator",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/blog/:path*",
       "destination": "/index.html"
     }
   ]
