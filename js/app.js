@@ -137,6 +137,9 @@
             }
         });
 
+        // Initialize time trackers
+        initTimeTrackers();
+
         // Initialize router
         Router.init();
     }
@@ -2042,9 +2045,11 @@
         const guideInvoice = document.getElementById('guide-invoice-page');
         const guideTerms = document.getElementById('guide-terms-page');
         const toolsRate = document.getElementById('tools-rate-page');
+        const toolsTimeTracker = document.getElementById('tools-time-tracker-page');
         if (guideInvoice) guideInvoice.style.display = 'none';
         if (guideTerms) guideTerms.style.display = 'none';
         if (toolsRate) toolsRate.style.display = 'none';
+        if (toolsTimeTracker) toolsTimeTracker.style.display = 'none';
     }
 
     function resetLandingPageSEO() {
@@ -2078,6 +2083,9 @@
         document.getElementById('sidebar-user-name').textContent = user.name;
         document.getElementById('sidebar-user-email').textContent = user.email;
         document.getElementById('header-user-name').textContent = user.name;
+        
+        // Populate customer dropdown in the sidebar time tracker
+        populateTrackerCustomerDropdown();
     };
 
     window.showAuthPage = function () {
@@ -2195,6 +2203,19 @@
         }
     };
 
+    window.showPublicTimeTracker = function () {
+        document.getElementById('landing-page').style.display = 'none';
+        document.getElementById('auth-page').style.display = 'none';
+        document.getElementById('app-shell').style.display = 'none';
+        hideGuidePages();
+
+        const el = document.getElementById('tools-time-tracker-page');
+        if (el) {
+            el.style.display = 'block';
+            initPublicTracker();
+        }
+    };
+
     let rateListenersInitialized = false;
     function initRateCalculatorListeners() {
         if (rateListenersInitialized) return;
@@ -2264,6 +2285,21 @@
         showAppShell();
         document.getElementById('header-title').textContent = 'Dashboard';
         await Dashboard.render();
+
+        // Check for pending invoice item from public timer
+        const pending = localStorage.getItem('pending_invoice_item');
+        if (pending) {
+            try {
+                const item = JSON.parse(pending);
+                localStorage.removeItem('pending_invoice_item');
+                // Navigate to create invoice page and prepopulate it
+                UI.showToast('Imported your tracked session into a new invoice!', 'success');
+                await window.showCreateInvoiceWithParams(item.description, item.quantity, item.rate);
+                Router.go('/create');
+            } catch (e) {
+                console.error('Failed to parse pending_invoice_item:', e);
+            }
+        }
     };
 
     // ─── Invoices List ────────────────────────────────
@@ -2439,6 +2475,28 @@
         // Populate customer dropdown
         await populateCustomerDropdown();
 
+        recalculateTotals();
+    };
+
+    window.showCreateInvoiceWithParams = async function (taskName, durationHours, hourlyRate, customerId = null) {
+        await window.showCreateInvoice();
+        
+        // Clear the default empty row added by showCreateInvoice
+        document.getElementById('items-table-body').innerHTML = '';
+        
+        const item = {
+            description: taskName,
+            quantity: parseFloat(durationHours.toFixed(2)),
+            rate: parseFloat(hourlyRate),
+            discount: 0,
+            amount: parseFloat((durationHours * hourlyRate).toFixed(2))
+        };
+        await addInvoiceItem(item);
+        
+        if (customerId) {
+            document.getElementById('inv-customer').value = customerId;
+            document.getElementById('inv-customer').dispatchEvent(new Event('change'));
+        }
         recalculateTotals();
     };
 
@@ -3750,6 +3808,414 @@
         });
 
         if (currentValue) select.value = currentValue;
+    }
+
+    // ─── Time Tracker Helpers & Logic ──────────────────
+    let sidebarTimerInterval = null;
+    let publicTimerInterval = null;
+
+    function formatTimeDisplay(totalMs) {
+        const totalSeconds = Math.floor(totalMs / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        
+        const pad = (num) => String(num).padStart(2, '0');
+        return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    }
+
+    async function populateTrackerCustomerDropdown() {
+        const user = Auth.getCurrentUser();
+        if (!user) return;
+
+        const customers = await Customers.getAll(user.id);
+        const select = document.getElementById('tracker-client');
+        if (!select) return;
+        const currentValue = select.value;
+
+        select.innerHTML = '<option value="">-- Select Client --</option>';
+        customers.forEach(cust => {
+            select.innerHTML += `<option value="${cust.id}">${UI.escapeHtml(cust.name)}</option>`;
+        });
+
+        if (currentValue) select.value = currentValue;
+    }
+
+    function initTimeTrackers() {
+        // 1. Setup sidebar tracker expand/collapse persistence
+        const trackerHeader = document.getElementById('sidebar-time-tracker-header');
+        const trackerBody = document.getElementById('sidebar-time-tracker-body');
+        const toggleArrow = document.getElementById('tracker-toggle-arrow');
+        
+        if (trackerHeader && trackerBody && toggleArrow) {
+            const isExpanded = localStorage.getItem('sidebar_tracker_expanded') !== 'false';
+            if (isExpanded) {
+                trackerBody.style.display = 'flex';
+                toggleArrow.style.transform = 'rotate(0deg)';
+            } else {
+                trackerBody.style.display = 'none';
+                toggleArrow.style.transform = 'rotate(-90deg)';
+            }
+
+            trackerHeader.addEventListener('click', () => {
+                const nowVisible = trackerBody.style.display !== 'none';
+                if (nowVisible) {
+                    trackerBody.style.display = 'none';
+                    toggleArrow.style.transform = 'rotate(-90deg)';
+                    localStorage.setItem('sidebar_tracker_expanded', 'false');
+                } else {
+                    trackerBody.style.display = 'flex';
+                    toggleArrow.style.transform = 'rotate(0deg)';
+                    localStorage.setItem('sidebar_tracker_expanded', 'true');
+                    populateTrackerCustomerDropdown();
+                }
+            });
+        }
+
+        // 2. Setup sidebar quick add client
+        const addClientBtn = document.getElementById('btn-tracker-add-client');
+        if (addClientBtn) {
+            addClientBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                customerModalCallback = async (newId) => {
+                    await populateTrackerCustomerDropdown();
+                    const select = document.getElementById('tracker-client');
+                    if (select) select.value = newId;
+                };
+                openCustomerModal(null);
+            });
+        }
+
+        // 3. Setup sidebar buttons
+        const btnStart = document.getElementById('btn-tracker-start');
+        const btnPause = document.getElementById('btn-tracker-pause');
+        const btnStop = document.getElementById('btn-tracker-stop');
+
+        if (btnStart) btnStart.addEventListener('click', startSidebarTimer);
+        if (btnPause) btnPause.addEventListener('click', pauseSidebarTimer);
+        if (btnStop) btnStop.addEventListener('click', stopSidebarTimer);
+
+        // Restore sidebar timer state on reload
+        restoreSidebarTimerState();
+    }
+
+    function startSidebarTimer() {
+        const taskVal = document.getElementById('tracker-task').value.trim();
+        const rateVal = document.getElementById('tracker-rate').value;
+        const clientVal = document.getElementById('tracker-client').value;
+
+        localStorage.setItem('sidebar_timer_isRunning', 'true');
+        localStorage.setItem('sidebar_timer_startTime', String(Date.now()));
+        localStorage.setItem('sidebar_timer_task', taskVal);
+        localStorage.setItem('sidebar_timer_rate', rateVal);
+        localStorage.setItem('sidebar_timer_client', clientVal);
+
+        updateSidebarTimerUI(true);
+        runSidebarTimerTick();
+    }
+
+    function runSidebarTimerTick() {
+        if (sidebarTimerInterval) clearInterval(sidebarTimerInterval);
+        
+        const display = document.getElementById('tracker-display');
+        const indicator = document.getElementById('tracker-status-indicator');
+        if (indicator) indicator.style.background = '#10b981'; // active green
+
+        sidebarTimerInterval = setInterval(() => {
+            const isRunning = localStorage.getItem('sidebar_timer_isRunning') === 'true';
+            if (!isRunning) {
+                clearInterval(sidebarTimerInterval);
+                return;
+            }
+
+            const startTime = parseInt(localStorage.getItem('sidebar_timer_startTime') || '0');
+            const accumulatedTime = parseInt(localStorage.getItem('sidebar_timer_accumulatedTime') || '0');
+            const totalElapsed = (Date.now() - startTime) + accumulatedTime;
+
+            if (display) display.textContent = formatTimeDisplay(totalElapsed);
+        }, 1000);
+    }
+
+    function pauseSidebarTimer() {
+        const isRunning = localStorage.getItem('sidebar_timer_isRunning') === 'true';
+        if (!isRunning) return;
+
+        const startTime = parseInt(localStorage.getItem('sidebar_timer_startTime') || '0');
+        const accumulatedTime = parseInt(localStorage.getItem('sidebar_timer_accumulatedTime') || '0');
+        const elapsedSinceStart = Date.now() - startTime;
+        const newAccumulated = accumulatedTime + elapsedSinceStart;
+
+        localStorage.setItem('sidebar_timer_isRunning', 'false');
+        localStorage.setItem('sidebar_timer_accumulatedTime', String(newAccumulated));
+
+        if (sidebarTimerInterval) clearInterval(sidebarTimerInterval);
+        updateSidebarTimerUI(false);
+    }
+
+    async function stopSidebarTimer() {
+        const isRunning = localStorage.getItem('sidebar_timer_isRunning') === 'true';
+        let totalElapsed = parseInt(localStorage.getItem('sidebar_timer_accumulatedTime') || '0');
+        
+        if (isRunning) {
+            const startTime = parseInt(localStorage.getItem('sidebar_timer_startTime') || '0');
+            totalElapsed += (Date.now() - startTime);
+        }
+
+        const taskVal = document.getElementById('tracker-task').value.trim() || 'Tracked Task';
+        const rateVal = parseFloat(document.getElementById('tracker-rate').value) || 50;
+        const clientVal = document.getElementById('tracker-client').value;
+
+        // Reset state
+        localStorage.setItem('sidebar_timer_isRunning', 'false');
+        localStorage.setItem('sidebar_timer_accumulatedTime', '0');
+        localStorage.setItem('sidebar_timer_startTime', '0');
+        localStorage.removeItem('sidebar_timer_task');
+        localStorage.removeItem('sidebar_timer_rate');
+        localStorage.removeItem('sidebar_timer_client');
+
+        if (sidebarTimerInterval) clearInterval(sidebarTimerInterval);
+        
+        // Reset UI
+        const display = document.getElementById('tracker-display');
+        if (display) display.textContent = '00:00:00';
+        updateSidebarTimerUI(false);
+        document.getElementById('tracker-task').value = '';
+
+        const elapsedHours = totalElapsed / (1000 * 3600);
+        if (elapsedHours < 0.005) {
+            UI.showToast('Timer reset. Logged duration was too short to convert.', 'info');
+            return;
+        }
+
+        const confirmConvert = confirm(`You logged ${formatTimeDisplay(totalElapsed)}. Would you like to create an invoice for this task?`);
+        if (confirmConvert) {
+            await window.showCreateInvoiceWithParams(taskVal, elapsedHours, rateVal, clientVal);
+            Router.go('/create');
+        }
+    }
+
+    function updateSidebarTimerUI(isRunning) {
+        const btnStart = document.getElementById('btn-tracker-start');
+        const btnPause = document.getElementById('btn-tracker-pause');
+        const btnStop = document.getElementById('btn-tracker-stop');
+        const indicator = document.getElementById('tracker-status-indicator');
+
+        if (isRunning) {
+            if (btnStart) btnStart.style.display = 'none';
+            if (btnPause) btnPause.style.display = 'block';
+            if (btnStop) btnStop.style.display = 'block';
+            if (indicator) indicator.style.background = '#10b981'; // active green
+        } else {
+            if (btnStart) btnStart.style.display = 'block';
+            if (btnPause) btnPause.style.display = 'none';
+            const accumulatedTime = parseInt(localStorage.getItem('sidebar_timer_accumulatedTime') || '0');
+            if (accumulatedTime > 0) {
+                if (btnStop) btnStop.style.display = 'block';
+                if (indicator) indicator.style.background = '#f59e0b'; // amber paused
+            } else {
+                if (btnStop) btnStop.style.display = 'none';
+                if (indicator) indicator.style.background = '#9ca3af'; // gray idle
+            }
+        }
+    }
+
+    function restoreSidebarTimerState() {
+        const isRunning = localStorage.getItem('sidebar_timer_isRunning') === 'true';
+        const accumulatedTime = parseInt(localStorage.getItem('sidebar_timer_accumulatedTime') || '0');
+        
+        const taskVal = localStorage.getItem('sidebar_timer_task') || '';
+        const rateVal = localStorage.getItem('sidebar_timer_rate') || '50';
+        const clientVal = localStorage.getItem('sidebar_timer_client') || '';
+
+        const taskInput = document.getElementById('tracker-task');
+        const rateInput = document.getElementById('tracker-rate');
+        const clientSelect = document.getElementById('tracker-client');
+
+        if (taskInput) taskInput.value = taskVal;
+        if (rateInput) rateInput.value = rateVal;
+        if (clientSelect) clientSelect.value = clientVal;
+
+        if (isRunning) {
+            updateSidebarTimerUI(true);
+            runSidebarTimerTick();
+        } else {
+            const display = document.getElementById('tracker-display');
+            if (display) {
+                display.textContent = formatTimeDisplay(accumulatedTime);
+            }
+            updateSidebarTimerUI(false);
+        }
+    }
+
+    let publicTrackerInitialized = false;
+
+    function initPublicTracker() {
+        if (publicTrackerInitialized) return;
+        publicTrackerInitialized = true;
+
+        const btnStart = document.getElementById('btn-public-tracker-start');
+        const btnPause = document.getElementById('btn-public-tracker-pause');
+        const btnStop = document.getElementById('btn-public-tracker-stop');
+        const btnConvert = document.getElementById('btn-public-tracker-convert');
+
+        if (btnStart) btnStart.addEventListener('click', startPublicTimer);
+        if (btnPause) btnPause.addEventListener('click', pausePublicTimer);
+        if (btnStop) btnStop.addEventListener('click', stopPublicTimer);
+        if (btnConvert) btnConvert.addEventListener('click', convertPublicTimerToInvoice);
+
+        restorePublicTimerState();
+    }
+
+    function startPublicTimer() {
+        const taskVal = document.getElementById('public-tracker-task').value.trim();
+        const rateVal = document.getElementById('public-tracker-rate').value;
+
+        localStorage.setItem('public_timer_isRunning', 'true');
+        localStorage.setItem('public_timer_startTime', String(Date.now()));
+        localStorage.setItem('public_timer_task', taskVal);
+        localStorage.setItem('public_timer_rate', rateVal);
+
+        updatePublicTimerUI(true);
+        runPublicTimerTick();
+    }
+
+    function runPublicTimerTick() {
+        if (publicTimerInterval) clearInterval(publicTimerInterval);
+
+        const display = document.getElementById('public-tracker-display');
+        publicTimerInterval = setInterval(() => {
+            const isRunning = localStorage.getItem('public_timer_isRunning') === 'true';
+            if (!isRunning) {
+                clearInterval(publicTimerInterval);
+                return;
+            }
+
+            const startTime = parseInt(localStorage.getItem('public_timer_startTime') || '0');
+            const accumulatedTime = parseInt(localStorage.getItem('public_timer_accumulatedTime') || '0');
+            const totalElapsed = (Date.now() - startTime) + accumulatedTime;
+
+            if (display) display.textContent = formatTimeDisplay(totalElapsed);
+        }, 1000);
+    }
+
+    function pausePublicTimer() {
+        const isRunning = localStorage.getItem('public_timer_isRunning') === 'true';
+        if (!isRunning) return;
+
+        const startTime = parseInt(localStorage.getItem('public_timer_startTime') || '0');
+        const accumulatedTime = parseInt(localStorage.getItem('public_timer_accumulatedTime') || '0');
+        const elapsedSinceStart = Date.now() - startTime;
+        const newAccumulated = accumulatedTime + elapsedSinceStart;
+
+        localStorage.setItem('public_timer_isRunning', 'false');
+        localStorage.setItem('public_timer_accumulatedTime', String(newAccumulated));
+
+        if (publicTimerInterval) clearInterval(publicTimerInterval);
+        updatePublicTimerUI(false);
+    }
+
+    function stopPublicTimer() {
+        localStorage.setItem('public_timer_isRunning', 'false');
+        localStorage.setItem('public_timer_accumulatedTime', '0');
+        localStorage.setItem('public_timer_startTime', '0');
+        localStorage.removeItem('public_timer_task');
+        localStorage.removeItem('public_timer_rate');
+
+        if (publicTimerInterval) clearInterval(publicTimerInterval);
+
+        const display = document.getElementById('public-tracker-display');
+        if (display) display.textContent = '00:00:00';
+        
+        document.getElementById('public-tracker-task').value = '';
+        updatePublicTimerUI(false);
+    }
+
+    function updatePublicTimerUI(isRunning) {
+        const btnStart = document.getElementById('btn-public-tracker-start');
+        const btnPause = document.getElementById('btn-public-tracker-pause');
+        const btnStop = document.getElementById('btn-public-tracker-stop');
+        const statusText = document.getElementById('public-tracker-status');
+        const statusDot = document.getElementById('public-tracker-dot');
+
+        if (isRunning) {
+            if (btnStart) btnStart.style.display = 'none';
+            if (btnPause) btnPause.style.display = 'block';
+            if (btnStop) btnStop.style.display = 'block';
+            if (statusText) statusText.textContent = 'Running';
+            if (statusDot) statusDot.style.background = '#10b981'; // active green
+        } else {
+            if (btnStart) btnStart.style.display = 'block';
+            if (btnPause) btnPause.style.display = 'none';
+            
+            const accumulatedTime = parseInt(localStorage.getItem('public_timer_accumulatedTime') || '0');
+            if (accumulatedTime > 0) {
+                if (btnStop) btnStop.style.display = 'block';
+                if (statusText) statusText.textContent = 'Paused';
+                if (statusDot) statusDot.style.background = '#f59e0b'; // amber
+            } else {
+                if (btnStop) btnStop.style.display = 'none';
+                if (statusText) statusText.textContent = 'Idle';
+                if (statusDot) statusDot.style.background = '#9ca3af'; // gray
+            }
+        }
+    }
+
+    function restorePublicTimerState() {
+        const isRunning = localStorage.getItem('public_timer_isRunning') === 'true';
+        const accumulatedTime = parseInt(localStorage.getItem('public_timer_accumulatedTime') || '0');
+        const taskVal = localStorage.getItem('public_timer_task') || '';
+        const rateVal = localStorage.getItem('public_timer_rate') || '60';
+
+        const taskInput = document.getElementById('public-tracker-task');
+        const rateInput = document.getElementById('public-tracker-rate');
+
+        if (taskInput) taskInput.value = taskVal;
+        if (rateInput) rateInput.value = rateVal;
+
+        if (isRunning) {
+            updatePublicTimerUI(true);
+            runPublicTimerTick();
+        } else {
+            const display = document.getElementById('public-tracker-display');
+            if (display) display.textContent = formatTimeDisplay(accumulatedTime);
+            updatePublicTimerUI(false);
+        }
+    }
+
+    async function convertPublicTimerToInvoice() {
+        const isRunning = localStorage.getItem('public_timer_isRunning') === 'true';
+        let totalElapsed = parseInt(localStorage.getItem('public_timer_accumulatedTime') || '0');
+        if (isRunning) {
+            const startTime = parseInt(localStorage.getItem('public_timer_startTime') || '0');
+            totalElapsed += (Date.now() - startTime);
+        }
+
+        const elapsedHours = totalElapsed / (1000 * 3600);
+        if (elapsedHours < 0.005) {
+            UI.showToast('Logged duration is too short to convert.', 'error');
+            return;
+        }
+
+        const taskVal = document.getElementById('public-tracker-task').value.trim() || 'Tracked Task';
+        const rateVal = parseFloat(document.getElementById('public-tracker-rate').value) || 60;
+
+        stopPublicTimer();
+
+        if (Auth.isLoggedIn()) {
+            await window.showCreateInvoiceWithParams(taskVal, elapsedHours, rateVal);
+            Router.go('/create');
+        } else {
+            const pending = {
+                description: taskVal,
+                quantity: parseFloat(elapsedHours.toFixed(2)),
+                rate: rateVal,
+                discount: 0,
+                amount: parseFloat((elapsedHours * rateVal).toFixed(2))
+            };
+            localStorage.setItem('pending_invoice_item', JSON.stringify(pending));
+            UI.showToast('Please sign in or register to convert your tracked session into an invoice!', 'info');
+            Router.go('/login');
+        }
     }
 
     // ─── Start ────────────────────────────────────────
