@@ -568,11 +568,17 @@
             submitBtn.disabled = true;
             submitBtn.textContent = 'Sending Message...';
 
-            const formData = new FormData(contactForm);
-            fetch('/', {
+            fetch('https://formsubmit.co/ajax/invoicetec0@gmail.com', {
                 method: 'POST',
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: new URLSearchParams(formData).toString()
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify({
+                    name: name,
+                    email: email,
+                    message: message
+                })
             })
             .then(response => {
                 if (response.ok) {
@@ -583,9 +589,8 @@
                 }
             })
             .catch(err => {
-                console.warn('Form submission caught (falling back to client mock):', err);
-                UI.showToast(`Thank you, ${name}! Your message has been received successfully.`, 'success');
-                contactForm.reset();
+                console.error('Contact submission error:', err);
+                UI.showToast('Failed to send message. Please try again.', 'error');
             })
             .finally(() => {
                 submitBtn.disabled = false;
